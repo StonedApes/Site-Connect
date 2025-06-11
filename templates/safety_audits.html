@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Safety Audits{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3>Safety Audits</h3>
+    <p>Schedule and manage safety audits.</p>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Schedule Audit</h4>
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.site_id.label(class="form-label") }}
+                        {{ form.site_id(class="form-control") }}
+                        {% for error in form.site_id.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.audit_date.label(class="form-label") }}
+                        {{ form.audit_date(class="form-control", type="date") }}
+                        {% for error in form.audit_date.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control") }}
+                        {% for error in form.description.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h4>Audit List</h4>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Site ID</th>
+                                <th>Audit Date</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for audit in audits %}
+                            <tr>
+                                <td>{{ audit.site_id }}</td>
+                                <td>{{ audit.audit_date }}</td>
+                                <td>{{ audit.description }}</td>
+                                <td>{{ audit.status }}</td>
+                                <td>
+                                    <a href="{{ url_for('update_safety_audit', audit_id=audit.audit_id) }}" class="btn btn-edit">Update</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

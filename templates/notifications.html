@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3>Notifications</h3>
+    <p>View system alerts and reminders.</p>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Expiring Licenses</h4>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>License Type</th>
+                                <th>Expiry Date</th>
+                                <th>Days Until Expiry</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for license in expiring_licenses %}
+                            <tr>
+                                <td>{{ license.employee_name }}</td>
+                                <td>{{ license.license_type }}</td>
+                                <td>{{ license.expiry_date }}</td>
+                                <td>{{ license.days_until_expiry }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Expired Licenses</h4>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>License Type</th>
+                                <th>Expiry Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for license in expired_licenses %}
+                            <tr>
+                                <td>{{ license.employee_name }}</td>
+                                <td>{{ license.license_type }}</td>
+                                <td>{{ license.expiry_date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Open Incidents</h4>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Severity</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for incident in open_incidents %}
+                            <tr>
+                                <td>{{ incident.type }}</td>
+                                <td>{{ incident.description }}</td>
+                                <td>{{ incident.severity }}</td>
+                                <td>{{ incident.date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Equipment Maintenance Due</h4>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Next Maintenance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for equip in equipment_maintenance_due %}
+                            <tr>
+                                <td>{{ equip.name }}</td>
+                                <td>{{ equip.type }}</td>
+                                <td>{{ equip.next_maintenance_date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Low Inventory</h4>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Category</th>
+                                <th>Quantity</th>
+                                <th>Reorder Point</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in low_inventory %}
+                            <tr>
+                                <td>{{ item.item_name }}</td>
+                                <td>{{ item.category }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.reorder_point }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Overdue Payments</h4>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Milestone</th>
+                                <th>Amount</th>
+                                <th>Due Date</th>
+                                <th>Subcontractor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in overdue_payments %}
+                            <tr>
+                                <td>{{ payment.milestone }}</td>
+                                <td>{{ payment.amount }}</td>
+                                <td>{{ payment.due_date }}</td>
+                                <td>{{ payment.company_name }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <h4>Upcoming Audits</h4>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Site ID</th>
+                                <th>Audit Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for audit in upcoming_audits %}
+                            <tr>
+                                <td>{{ audit.site_id }}</td>
+                                <td>{{ audit.audit_date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

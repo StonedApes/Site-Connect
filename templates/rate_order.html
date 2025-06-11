@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Rate Order{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3>Rate Order #{{ order.order_id }}</h3>
+    <p>Provide a rating for this order (1-5).</p>
+</div>
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label for="rating" class="form-label">Rating</label>
+                <select name="rating" id="rating" class="form-select" required>
+                    <option value="1">1 - Poor</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5 - Excellent</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Submit Rating</button>
+        </form>
+    </div>
+</div>
+<div class="mt-3">
+    <a href="{{ url_for('orders') }}" class="btn btn-secondary">Back to Orders</a>
+</div>
+{% endblock %}

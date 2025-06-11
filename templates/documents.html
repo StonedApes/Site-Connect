@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Documents{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3 class="text-2xl font-bold">Documents</h3>
+    <p class="text-gray-600 dark:text-gray-400">Manage your documents and contracts.</p>
+</div>
+<div class="row grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="card">
+        <div class="card-body">
+            <h4 class="text-xl font-semibold mb-4">Upload Document</h4>
+            <form method="POST" enctype="multipart/form-data" class="space-y-4">
+                {{ form.hidden_tag() }}
+                <div>
+                    {{ form.title.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                    {{ form.title(class="form-control mt-1") }}
+                    {% for error in form.title.errors %}
+                        <span class="text-red-500 text-sm">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                <div>
+                    {{ form.file.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                    {{ form.file(class="form-control mt-1") }}
+                    {% for error in form.file.errors %}
+                        <span class="text-red-500 text-sm">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                {{ form.submit(class="btn-primary w-full") }}
+            </form>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <h4 class="text-xl font-semibold mb-4">Document List</h4>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Version</th>
+                            <th>Uploaded By</th>
+                            <th>Uploaded At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for document in documents %}
+                        <tr>
+                            <td>{{ document.title }}</td>
+                            <td>{{ document.version }}</td>
+                            <td>{{ document.uploaded_by }}</td>
+                            <td>{{ document.uploaded_at }}</td>
+                            <td>
+                                <a href="{{ url_for('document_detail', document_id=document.document_id) }}" class="btn-primary btn-sm">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {{ pagination.links }}
+        </div>
+    </div>
+</div>
+{% endblock %}

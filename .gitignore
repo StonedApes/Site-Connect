@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+*.env
+*.sqlite3
+*.db
+construction.db
+
+# Flask
+instance/
+.flaskenv
+
+# IDEs
+.vscode/
+.idea/
+
+# Misc
+*.log
+static/uploads/*
+!static/uploads/.gitkeep
+gg  # Add gg to ignore the specific file if unnecessary
+# Remove or correct ggstatic/js/server.js if it's a typo

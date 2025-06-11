@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Insights{% endblock %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/insightsCharts.js') }}"></script>
+{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3>Insights</h3>
+    <p>Analyze your operations with charts and metrics.</p>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Order Status</h4>
+                <canvas id="orderStatusChart" data-status-counts="{{ status_counts }}"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Incident Types</h4>
+                <canvas id="incidentTypesChart" data-incident-counts="{{ incident_counts }}"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Orders Over Time</h4>
+                <canvas id="ordersOverTimeChart" data-dates="{{ order_dates }}" data-counts="{{ order_counts }}"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Incident Severity</h4>
+                <canvas id="severityChart" data-severity-counts="{{ severity_counts }}"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Subcontractor Status</h4>
+                <canvas id="subcontractorStatusChart" data-status-counts="{{ subcontractor_status_counts }}"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Manpower Trend</h4>
+                <canvas id="manpowerTrendChart" data-dates="{{ manpower_dates }}" data-values="{{ manpower_values }}"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-body">
+        <h4>Compliance Metrics</h4>
+        <p>Induction Compliance: {{ induction_compliance_rate|round(2) }}%</p>
+        <p>License Compliance: {{ license_compliance_rate|round(2) }}%</p>
+        <p>Vehicles On Road: {{ vehicles_on_road }}</p>
+        <p>Vehicles In Yard: {{ vehicles_in_yard }}</p>
+    </div>
+</div>
+{% endblock %}

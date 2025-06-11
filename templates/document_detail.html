@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Document: {{ document.title }}{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3 class="text-2xl font-bold">Document: {{ document.title }}</h3>
+    <p class="text-gray-600 dark:text-gray-400">View document details.</p>
+</div>
+<div class="card">
+    <div class="card-body">
+        <h4 class="text-xl font-semibold mb-4">Document Details</h4>
+        <p><strong>Title:</strong> {{ document.title }}</p>
+        <p><strong>Version:</strong> {{ document.version }}</p>
+        <p><strong>Uploaded By:</strong> {{ document.uploaded_by }}</p>
+        <p><strong>Uploaded At:</strong> {{ document.uploaded_at }}</p>
+        <a href="{{ url_for('static', filename=document.file_url) }}" class="btn-primary mt-4" target="_blank">View File</a>
+    </div>
+</div>
+<div class="mt-4">
+    <a href="{{ url_for('documents') }}" class="btn-primary">Back to Documents</a>
+</div>
+{% endblock %}

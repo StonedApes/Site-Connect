@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Inductions{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3>Inductions</h3>
+    <p>Manage employee inductions.</p>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Add Induction</h4>
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.employee_id.label(class="form-label") }}
+                        {{ form.employee_id(class="form-select") }}
+                        {% for error in form.employee_id.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.induction_type.label(class="form-label") }}
+                        {{ form.induction_type(class="form-control") }}
+                        {% for error in form.induction_type.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.completion_date.label(class="form-label") }}
+                        {{ form.completion_date(class="form-control", type="date") }}
+                        {% for error in form.completion_date.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h4>Induction List</h4>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Induction Type</th>
+                                <th>Completion Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for induction in inductions %}
+                            <tr>
+                                <td>{{ induction.employee_name }}</td>
+                                <td>{{ induction.induction_type }}</td>
+                                <td>{{ induction.completion_date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

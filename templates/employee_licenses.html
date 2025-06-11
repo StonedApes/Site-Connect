@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Employee Licenses{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3>Employee Licenses</h3>
+    <p>Manage employee licenses and add new employees.</p>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Add Employee</h4>
+                <form method="POST">
+                    {{ employee_form.hidden_tag() }}
+                    <input type="hidden" name="form_type" value="add_employee">
+                    <div class="mb-3">
+                        {{ employee_form.name.label(class="form-label") }}
+                        {{ employee_form.name(class="form-control") }}
+                        {% for error in employee_form.name.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ employee_form.email.label(class="form-label") }}
+                        {{ employee_form.email(class="form-control") }}
+                        {% for error in employee_form.email.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ employee_form.role.label(class="form-label") }}
+                        {{ employee_form.role(class="form-control") }}
+                        {% for error in employee_form.role.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ employee_form.phone.label(class="form-label") }}
+                        {{ employee_form.phone(class="form-control") }}
+                        {% for error in employee_form.phone.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {{ employee_form.submit(class="btn btn-primary w-100") }}
+                </form>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <h4>Add License</h4>
+                <form method="POST">
+                    {{ license_form.hidden_tag() }}
+                    <input type="hidden" name="form_type" value="add_license">
+                    <div class="mb-3">
+                        {{ license_form.employee_id.label(class="form-label") }}
+                        {{ license_form.employee_id(class="form-select") }}
+                        {% for error in license_form.employee_id.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ license_form.license_type.label(class="form-label") }}
+                        {{ license_form.license_type(class="form-control") }}
+                        {% for error in license_form.license_type.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ license_form.issue_date.label(class="form-label") }}
+                        {{ license_form.issue_date(class="form-control", type="date") }}
+                        {% for error in license_form.issue_date.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ license_form.expiry_date.label(class="form-label") }}
+                        {{ license_form.expiry_date(class="form-control", type="date") }}
+                        {% for error in license_form.expiry_date.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {{ license_form.submit(class="btn btn-primary w-100") }}
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h4>Licenses</h4>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover license-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>License Type</th>
+                                <th>Issue Date</th>
+                                <th>Expiry Date</th>
+                                <th>Days Until Expiry</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for license in licenses %}
+                            <tr>
+                                <td>{{ license.employee_name }}</td>
+                                <td>{{ license.license_type }}</td>
+                                <td>{{ license.issue_date }}</td>
+                                <td class="expiry-cell {{ license.expiry_class }}">{{ license.expiry_date }}</td>
+                                <td>{{ license.days_until_expiry }}</td>
+                                <td>
+                                    <a href="{{ url_for('edit_license', license_id=license.license_id) }}" class="btn btn-edit">Edit</a>
+                                    <a href="{{ url_for('delete_license', license_id=license.license_id) }}" class="btn btn-delete" onclick="return confirm('Are you sure?')">Delete</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

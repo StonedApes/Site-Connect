@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block breadcrumb %}Profile{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3 class="text-2xl font-bold">User Profile</h3>
+    <p class="text-gray-600 dark:text-gray-400">Manage your account details and settings.</p>
+</div>
+<div class="card">
+    <div class="card-body">
+        <h4 class="text-xl font-semibold mb-4">Profile Details</h4>
+        <p><strong>Username:</strong> {{ current_user.username }}</p>
+        <p><strong>Role:</strong> {{ current_user.role.name }}</p>
+        <p><strong>Company ID:</strong> {{ current_user.company_id }}</p>
+        <p><strong>Email:</strong> {{ current_user.email or 'N/A' }}</p>
+        <p><strong>Last Login:</strong> {{ '2025-06-09 04:58'|strftime('%Y-%m-%d %H:%M') }} IST</p>
+        <a href="{{ url_for('settings') }}" class="btn-primary mt-4">Edit Profile</a>
+    </div>
+</div>
+{% endblock %}

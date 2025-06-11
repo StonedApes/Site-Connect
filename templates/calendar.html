@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Calendar{% endblock %}
+{% block extra_head %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            events: {{ events | safe }},
+            eventClick: function(info) {
+                if (info.event.url) {
+                    window.location.href = info.event.url;
+                }
+            }
+        });
+        calendar.render();
+    });
+</script>
+{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3 class="text-2xl font-bold">Calendar</h3>
+    <p class="text-gray-600 dark:text-gray-400">View tasks, audits, and permits on a calendar.</p>
+</div>
+<div class="card">
+    <div class="card-body">
+        <div id="calendar"></div>
+    </div>
+</div>
+{% endblock %}

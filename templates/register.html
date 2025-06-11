@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block body_class %}register-page{% endblock %}
+{% block top_banner %}
+<header class="top-banner login-banner" role="banner">
+    <div class="brand-container flex-grow">
+        <span class="brand-logo">Site Connect</span>
+    </div>
+</header>
+{% endblock %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-white">
+    <div class="card w-full max-w-lg p-6 bg-gradient-to-br from-blue-900 to-blue-600 text-white shadow-lg rounded-lg transform transition-all duration-300 hover:scale-105">
+        <div class="card-body">
+            <h2 class="text-3xl font-bold text-white text-center mb-6">Site Connect Register</h2>
+            <form method="POST" action="" class="space-y-4">
+                {{ form.hidden_tag() }}
+                <div class="mb-4">
+                    {{ form.username.label(class="block text-sm font-medium text-white mb-1") }}
+                    {{ form.username(class="form-control w-full p-3 rounded-md bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400", placeholder="Username") }}
+                    {% for error in form.username.errors %}
+                        <span class="text-red-200 text-sm">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                <div class="mb-4">
+                    {{ form.password.label(class="block text-sm font-medium text-white mb-1") }}
+                    {{ form.password(class="form-control w-full p-3 rounded-md bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400", type="password", placeholder="Password") }}
+                    {% for error in form.password.errors %}
+                        <span class="text-red-200 text-sm">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                <div class="mb-6">
+                    {{ form.submit(class="btn-primary w-full py-3 rounded-md hover:bg-green-600 transition-colors duration-300") }}
+                </div>
+                <div class="text-center">
+                    <a href="{{ url_for('login') }}" class="text-white hover:text-blue-200 underline transition-colors duration-300">Already have an account? Login</a>
+                </div>
+            </form>
+            <p class="text-gray-200 text-center mt-4 text-sm">
+                {{ current_time|strftime('%I:%M %p IST, %d-%m-%Y') if current_time is defined else 'N/A' }}
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_head %}
+<style>
+/* Ensure register page uses white background and hides unwanted elements */
+body.register-page {
+    background-color: #FFFFFF !important;
+    color: #1F2937 !important;
+}
+/* Hide notifications, search bar, and chat widget on register page */
+body.register-page .top-right-actions,
+body.register-page .chat-widget {
+    display: none !important;
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Remove support chat widget
+    var chatWidgets = document.querySelectorAll('.chat-widget');
+    for (var k = 0; k < chatWidgets.length; k++) {
+        chatWidgets[k].remove();
+    }
+    // Remove top-right actions (theme toggle, logout)
+    var topRightActions = document.querySelectorAll('.top-right-actions');
+    for (var j = 0; j < topRightActions.length; j++) {
+        topRightActions[j].remove();
+    }
+});
+</script>
+{% endblock %}

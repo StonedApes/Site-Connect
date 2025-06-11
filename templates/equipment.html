@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Equipment{% endblock %}
+{% block breadcrumb_title %}Equipment{% endblock %}
+{% block content %}
+<div class="fade-in">
+    <div class="mb-8 text-center">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Equipment</h1>
+        <p class="text-lg text-gray-600 dark:text-gray-400 mt-2">Manage and track your equipment inventory.</p>
+    </div>
+    <div class="container">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Add Equipment Form -->
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Add Equipment</h4>
+                    <form method="POST" action="" class="space-y-4">
+                        {{ form.hidden_tag() if form else '' }}
+                        <div class="mb-4">
+                            {{ form.name.label(class="block text-sm font-medium text-white mb-1") if form else '<label class="block text-sm font-medium text-white mb-1">Name</label>'|safe }}
+                            <input type="text" name="name" id="name" class="form-control w-full p-3 rounded-md bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400" required placeholder="Enter equipment name" value="{{ form.name.data if form and form.name.data else '' }}">
+                            {% if form and form.name.errors %}
+                                {% for error in form.name.errors %}
+                                    <span class="text-red-200 text-sm">{{ error }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="mb-4">
+                            {{ form.type.label(class="block text-sm font-medium text-white mb-1") if form else '<label class="block text-sm font-medium text-white mb-1">Type</label>'|safe }}
+                            <input type="text" name="type" id="type" class="form-control w-full p-3 rounded-md bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400" required placeholder="Enter equipment type" value="{{ form.type.data if form and form.type.data else '' }}">
+                            {% if form and form.type.errors %}
+                                {% for error in form.type.errors %}
+                                    <span class="text-red-200 text-sm">{{ error }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="mb-4">
+                            {{ form.last_maintenance_date.label(class="block text-sm font-medium text-white mb-1") if form else '<label class="block text-sm font-medium text-white mb-1">Last Maintenance Date</label>'|safe }}
+                            <input type="date" name="last_maintenance_date" id="last_maintenance_date" class="form-control w-full p-3 rounded-md bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Select date" value="{{ form.last_maintenance_date.data.strftime('%Y-%m-%d') if form and form.last_maintenance_date.data else '' }}">
+                            {% if form and form.last_maintenance_date.errors %}
+                                {% for error in form.last_maintenance_date.errors %}
+                                    <span class="text-red-200 text-sm">{{ error }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="mb-4">
+                            {{ form.next_maintenance_date.label(class="block text-sm font-medium text-white mb-1") if form else '<label class="block text-sm font-medium text-white mb-1">Next Maintenance Date</label>'|safe }}
+                            <input type="date" name="next_maintenance_date" id="next_maintenance_date" class="form-control w-full p-3 rounded-md bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400" required placeholder="Select date" value="{{ form.next_maintenance_date.data.strftime('%Y-%m-%d') if form and form.next_maintenance_date.data else '' }}">
+                            {% if form and form.next_maintenance_date.errors %}
+                                {% for error in form.next_maintenance_date.errors %}
+                                    <span class="text-red-200 text-sm">{{ error }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="mb-6">
+                            <button type="submit" class="btn-primary w-full py-3 rounded-md hover:bg-green-600 transition-colors duration-300">Add Equipment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Equipment List -->
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Equipment List</h4>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Last Maintenance</th>
+                                    <th>Next Maintenance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if equipment %}
+                                    {% for item in equipment %}
+                                    <tr>
+                                        <td>{{ item.equipment_id }}</td>
+                                        <td>{{ item.name }}</td>
+                                        <td>{{ item.type }}</td>
+                                        <td>{{ item.last_maintenance_date|default('N/A', true) }}</td>
+                                        <td>{{ item.next_maintenance_date }}</td>
+                                        <td>
+                                            <a href="{{ url_for('edit_equipment', equipment_id=item.equipment_id) }}" class="btn-primary btn-sm">Edit</a>
+                                            <a href="{{ url_for('delete_equipment', equipment_id=item.equipment_id) }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this equipment?')">Delete</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center">No equipment found.</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{ pagination.links if pagination else '' }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

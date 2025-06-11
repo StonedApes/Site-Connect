@@ -1,0 +1,415 @@
+/* Tailwind CSS CDN */
+@import url('https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Roboto:wght@400;500&display=swap');
+
+/* Define color variables */
+:root {
+  --primary-color: #1E3A8A; /* Deep Blue */
+  --secondary-color: #22C55E; /* Emerald Green */
+  --accent-color: #F59E0B; /* Warm Amber */
+  --background-color: #FFFFFF; /* Solid White */
+  --dark-background: #1F2937; /* Dark Slate */
+  --text-color: #111827; /* Dark Gray */
+  --dark-text-color: #E5E7EB; /* Light Gray */
+  --border-color: #E5E7EB; /* Light Border */
+  --banner-height: 64px;
+}
+
+/* Global Styles */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  font-family: 'Roboto', sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  scroll-behavior: smooth;
+}
+
+body.dark-mode {
+  background-color: var(--dark-background);
+  color: var(--dark-text-color);
+}
+
+/* Authentication Page */
+.auth-page {
+  background-color: var(--background-color); /* Ensure solid white background */
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Existing styles remain unchanged below this point... */
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode h5, body.dark-mode h6 {
+  color: #D1D5DB;
+}
+
+h1 { font-size: 2.25rem; }
+h2 { font-size: 1.875rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+h5 { font-size: 1rem; }
+h6 { font-size: 0.875rem; }
+
+/* Top Banner */
+.top-banner {
+  background-color: var(--primary-color);
+  color: white;
+  height: var(--banner-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.top-banner.login-banner {
+  justify-content: center;
+}
+
+.brand-logo {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  text-transform: uppercase;
+  transition: color 0.3s ease;
+}
+
+.brand-logo:hover {
+  color: var(--secondary-color);
+}
+
+.top-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.theme-toggle-btn {
+  background-color: var(--secondary-color);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  transition: background-color 0.3s ease, transform 0.2s;
+}
+
+.theme-toggle-btn:hover {
+  background-color: #1a9d49;
+  transform: scale(1.05);
+}
+
+/* Sidebar */
+.sidebar {
+  background-color: white;
+  width: 200px;
+  position: fixed;
+  top: var(--banner-height);
+  left: 0;
+  height: calc(100vh - var(--banner-height));
+  padding: 16px 0;
+  transition: transform 0.3s ease;
+  z-index: 900;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+}
+
+body.dark-mode .sidebar {
+  background-color: #2D3748;
+}
+
+.sidebar.collapsed {
+  transform: translateX(-100%);
+}
+
+.sidebar-logo {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  padding: 16px;
+  display: block;
+  text-align: center;
+}
+
+body.dark-mode .sidebar-logo {
+  color: #D1D5DB;
+}
+
+.user-info {
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  color: #6B7280;
+  border-bottom: 1px solid var(--border-color);
+}
+
+body.dark-mode .user-info {
+  color: #9CA3AF;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  color: #4B5563;
+  padding: 12px 16px;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.dark-mode .nav-link {
+  color: #D1D5DB;
+}
+
+.nav-link:hover {
+  background-color: #F3F4F6;
+  color: var(--primary-color);
+}
+
+body.dark-mode .nav-link:hover {
+  background-color: #374151;
+}
+
+.nav-link.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.nav-link i {
+  margin-right: 12px;
+  font-size: 1rem;
+}
+
+.badge {
+  background-color: var(--accent-color);
+  color: white;
+  border-radius: 9999px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  margin-left: 8px;
+}
+
+/* Main Content */
+.main-content {
+  margin-top: var(--banner-height);
+  margin-left: 200px;
+  padding: 24px;
+  min-height: calc(100vh - var(--banner-height));
+  transition: margin-left 0.3s ease;
+}
+
+.main-content.no-sidebar {
+  margin-left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Cards */
+.card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px;
+  transition: transform 0.2s ease;
+}
+
+body.dark-mode .card {
+  background-color: #2D3748;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+.card-body {
+  padding: 20px;
+}
+
+/* Tables */
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+body.dark-mode .table {
+  background-color: #2D3748;
+}
+
+.table th {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 12px;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.875rem;
+}
+
+body.dark-mode .table td {
+  border-bottom: 1px solid #4B5563;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: #F9FAFB;
+}
+
+body.dark-mode .table-striped tbody tr:nth-of-type(odd) {
+  background-color: #374151;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #F3F4F6;
+}
+
+body.dark-mode .table-hover tbody tr:hover {
+  background-color: #4B5563;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--secondary-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  transition: background-color 0.3s ease, transform 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #1a9d49;
+  transform: scale(1.05);
+}
+
+.btn-secondary {
+  background-color: #6B7280;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  transition: background-color 0.3s ease, transform 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: #4B5563;
+  transform: scale(1.05);
+}
+
+/* Forms */
+.form-label {
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 8px;
+  display: block;
+}
+
+body.dark-mode .form-label {
+  color: var(--dark-text-color);
+}
+
+.form-control {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 8px 12px;
+  background-color: white;
+  color: var(--text-color);
+  width: 100%;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+body.dark-mode .form-control {
+  background-color: #374151;
+  color: var(--dark-text-color);
+  border-color: #4B5563;
+}
+
+.form-control:focus {
+  border-color: var(--secondary-color);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+/* Footer */
+.footer {
+  background-color: var(--primary-color);
+  color: white;
+  text-align: center;
+  padding: 16px 0;
+  margin-top: auto;
+  font-size: 0.875rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .main-content {
+    margin-left: 0;
+    padding: 16px;
+  }
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebar.active {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+  .card-body {
+    padding: 16px;
+  }
+  .table th, .table td {
+    padding: 8px;
+  }
+}

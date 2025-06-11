@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Track Order{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3>Track Order #{{ order.order_id }}</h3>
+    <p>View tracking details for this order.</p>
+</div>
+<div class="card">
+    <div class="card-body">
+        <h4>Order Details</h4>
+        <p><strong>Item:</strong> {{ order.item }}</p>
+        <p><strong>Quantity:</strong> {{ order.quantity }}</p>
+        <p><strong>Site ID:</strong> {{ order.site_id }}</p>
+        <p><strong>Status:</strong> {{ order.status }}</p>
+        <p><strong>Comments:</strong> {{ order.comments or 'N/A' }}</p>
+        {% if latitude and longitude %}
+        <h4>Location</h4>
+        <p><strong>Latitude:</strong> {{ latitude }}</p>
+        <p><strong>Longitude:</strong> {{ longitude }}</p>
+        <div id="map" style="height: 300px;"></div>
+        <script>
+            // Placeholder for map integration (e.g., Leaflet.js)
+            // Initialize map with latitude={{ latitude }}, longitude={{ longitude }}
+        </script>
+        {% else %}
+        <p>No location data available.</p>
+        {% endif %}
+    </div>
+</div>
+<div class="mt-3">
+    <a href="{{ url_for('track_orders') }}" class="btn btn-secondary">Back to Track Orders</a>
+</div>
+{% endblock %}

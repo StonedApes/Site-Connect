@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Mobile Dashboard{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3>Mobile Dashboard</h3>
+    <p>Quick access to key features.</p>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>Quick Actions</h4>
+                <a href="{{ url_for('mobile_report_incident') }}" class="btn btn-primary w-100 mb-2">Report Incident</a>
+                <a href="{{ url_for('mobile_complete_induction') }}" class="btn btn-primary w-100">Complete Induction</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h4>Weather Forecast</h4>
+                {% for site_id, forecasts in weather_data.items %}
+                <h5>{{ site_id }}</h5>
+                <div class="weather-grid">
+                    {% for forecast in forecasts %}
+                    <div class="weather-card">
+                        <p><strong>{{ forecast.date }}</strong></p>
+                        <p>Temp: {{ forecast.temp }}°C</p>
+                        <p>{{ forecast.condition }}</p>
+                        {% if forecast.warning %}
+                        <p class="warning">{{ forecast.warning }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

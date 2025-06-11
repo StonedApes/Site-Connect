@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Mock Push Notifications{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3 class="text-2xl font-bold">Push Notifications (Mock)</h3>
+    <p class="text-gray-600 dark:text-gray-400">Simulated mobile notifications for your team.</p>
+</div>
+<div class="card">
+    <div class="card-body">
+        <h4 class="text-xl font-semibold mb-4">Recent Notifications</h4>
+        <ul class="space-y-2">
+            {% for task in tasks if task.due_date <= (today + timedelta(days=1)) %}
+            <li class="p-2 border border-gray-200 dark:border-gray-700 rounded">
+                <strong>Task Deadline:</strong> {{ task.title }} is due on {{ task.due_date }}.
+            </li>
+            {% endfor %}
+            {% for incident in open_incidents %}
+            <li class="p-2 border border-gray-200 dark:border-gray-700 rounded">
+                <strong>New Incident:</strong> {{ incident.type }} reported on {{ incident.date }}.
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

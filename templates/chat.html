@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Chat{% endblock %}
+{% block extra_head %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+    const socket = io('/chat');
+    socket.on('chat_message', function(data) {
+        const chatMessages = document.getElementById('chat-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'p-2 border-b border-gray-200 dark:border-gray-700';
+        messageDiv.innerHTML = `<strong>${data.username}</strong> (${data.timestamp}): ${data.text}`;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+</script>
+{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3 class="text-2xl font-bold">Team Chat</h3>
+    <p class="text-gray-600 dark:text-gray-400">Collaborate with your team in real-time.</p>
+</div>
+<div class="card">
+    <div class="card-body">
+        <div id="chat-messages" class="h-64 overflow-y-auto mb-4"></div>
+        <form method="POST" class="space-y-4">
+            {{ form.hidden_tag() }}
+            <div>
+                {{ form.message.label(class="block text-sm font-medium text-gray-700 dark:text-gray-300") }}
+                {{ form.message(class="form-control mt-1") }}
+                {% for error in form.message.errors %}
+                    <span class="text-red-500 text-sm">{{ error }}</span>
+                {% endfor %}
+            </div>
+            {{ form.submit(class="btn-primary w-full") }}
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Site Connect - Construction Management Platform">
+    <meta name="author" content="xAI">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <title>{% block title %}{% endblock %} - Site Connect</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="{{ 'auth-page' if 'login' in request.path or 'register' in request.path else '' }} {{ session.get('theme', 'light-mode') }}">
+    <div class="loading-spinner" id="loading-spinner" aria-live="polite" aria-label="Loading page content">
+        <i class="fas fa-spinner fa-spin"></i>
+    </div>
+    {% block top_banner %}
+    <header class="top-banner" role="banner">
+        <div class="brand-container flex-grow">
+            <span class="brand-logo">Site Connect</span>
+        </div>
+        {% if current_user.is_authenticated %}
+        <div class="top-right-actions" role="navigation">
+            <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle theme">
+                <i class="fas fa-{{ 'moon' if session.get('theme') == 'light-mode' else 'sun' }}"></i>
+            </button>
+            <a href="{{ url_for('logout') }}" class="btn btn-secondary" aria-label="Logout">Logout</a>
+        </div>
+        {% endif %}
+    </header>
+    {% endblock %}
+    {% if current_user.is_authenticated and 'login' not in request.path and 'register' not in request.path %}
+    <nav class="sidebar {{ 'collapsed' if session.get('sidebar_collapse') == 'collapsed' else '' }}" id="sidebar" role="navigation" aria-label="Main navigation">
+        <div class="sidebar-logo">
+            <a href="{{ url_for('dashboard') }}" aria-label="Dashboard">Menu</a>
+        </div>
+        <div class="user-info">
+            {{ current_user.username }} (ID: {{ current_user.company_id }})<br>
+            <small>Time: {% if current_time is defined %}{{ current_time|strftime('%I:%M %p IST, %d-%m-%Y') }}{% else %}N/A{% endif %}</small>
+        </div>
+        <a href="{{ url_for('dashboard') }}" class="nav-link {{ 'active' if request.path == url_for('dashboard') }}" aria-current="{{ 'page' if request.path == url_for('dashboard') else 'false' }}"><i class="fas fa-tachometer-alt"></i>Dashboard</a>
+        <a href="{{ url_for('order_form') }}" class="nav-link {{ 'active' if request.path == url_for('order_form') }}"><i class="fas fa-file-alt"></i>Order Form</a>
+        <a href="{{ url_for('orders') }}" class="nav-link {{ 'active' if request.path == url_for('orders') }}"><i class="fas fa-history"></i>Orders</a>
+        <a href="{{ url_for('track_orders') }}" class="nav-link {{ 'active' if request.path == url_for('track_orders') }}"><i class="fas fa-truck"></i>Track Orders</a>
+        <a href="{{ url_for('incidents') }}" class="nav-link {{ 'active' if request.path == url_for('incidents') }}"><i class="fas fa-exclamation-triangle"></i>Incidents</a>
+        <a href="{{ url_for('subcontractor_portal') }}" class="nav-link {{ 'active' if request.path == url_for('subcontractor_portal') }}"><i class="fas fa-users"></i>Subcontractors</a>
+        <a href="{{ url_for('daily_reports') }}" class="nav-link {{ 'active' if request.path == url_for('daily_reports') }}"><i class="fas fa-clipboard-list"></i>Daily Reports</a>
+        <a href="{{ url_for('insights') }}" class="nav-link {{ 'active' if request.path == url_for('insights') }}"><i class="fas fa-chart-line"></i>Insights</a>
+        <a href="{{ url_for('notifications') }}" class="nav-link {{ 'active' if request.path == url_for('notifications') }}"><i class="fas fa-bell"></i>Notifications {% if notifications_count > 0 %}<span class="badge">{{ notifications_count }}</span>{% endif %}</a>
+        <a href="{{ url_for('equipment') }}" class="nav-link {{ 'active' if request.path == url_for('equipment') }}"><i class="fas fa-tools"></i>Equipment</a>
+        <a href="{{ url_for('weather_forecast') }}" class="nav-link {{ 'active' if request.path == url_for('weather_forecast') }}"><i class="fas fa-cloud-sun"></i>Weather</a>
+        <a href="{{ url_for('blueprints') }}" class="nav-link {{ 'active' if request.path == url_for('blueprints') }}"><i class="fas fa-drafting-compass"></i>Blueprints</a>
+        <a href="{{ url_for('reports') }}" class="nav-link {{ 'active' if request.path == url_for('reports') }}"><i class="fas fa-file-export"></i>Reports</a>
+        <a href="{{ url_for('mobile') }}" class="nav-link {{ 'active' if request.path == url_for('mobile') }}"><i class="fas fa-mobile-alt"></i>Mobile</a>
+        <a href="{{ url_for('tasks') }}" class="nav-link {{ 'active' if request.path == url_for('tasks') }}"><i class="fas fa-tasks"></i>Tasks</a>
+        <a href="{{ url_for('timesheets') }}" class="nav-link {{ 'active' if request.path == url_for('timesheets') }}"><i class="fas fa-clock"></i>Timesheets</a>
+        <a href="{{ url_for('inventory') }}" class="nav-link {{ 'active' if request.path == url_for('inventory') }}"><i class="fas fa-warehouse"></i>Inventory</a>
+        <a href="{{ url_for('safety_audits') }}" class="nav-link {{ 'active' if request.path == url_for('safety_audits') }}"><i class="fas fa-shield-alt"></i>Safety Audits</a>
+        <a href="{{ url_for('projects') }}" class="nav-link {{ 'active' if request.path == url_for('projects') }}"><i class="fas fa-project-diagram"></i>Projects</a>
+        <a href="{{ url_for('documents') }}" class="nav-link {{ 'active' if request.path == url_for('documents') }}"><i class="fas fa-folder"></i>Documents</a>
+        <a href="{{ url_for('chat') }}" class="nav-link {{ 'active' if request.path == url_for('chat') }}"><i class="fas fa-comments"></i>Chat</a>
+        <a href="{{ url_for('calendar') }}" class="nav-link {{ 'active' if request.path == url_for('calendar') }}"><i class="fas fa-calendar"></i>Calendar</a>
+        {% if has_permission('manage_users') %}
+            <a href="{{ url_for('admin') }}" class="nav-link {{ 'active' if request.path == url_for('admin') }}"><i class="fas fa-user-shield"></i>Admin</a>
+            <a href="{{ url_for('employee_licenses') }}" class="nav-link pl-4 {{ 'active' if request.path == url_for('employee_licenses') }}"><i class="fas fa-id-card"></i>Licenses</a>
+            <a href="{{ url_for('inductions') }}" class="nav-link pl-4 {{ 'active' if request.path == url_for('inductions') }}"><i class="fas fa-book"></i>Inductions</a>
+            <a href="{{ url_for('permits') }}" class="nav-link pl-4 {{ 'active' if request.path == url_for('permits') }}"><i class="fas fa-stamp"></i>Permits</a>
+            <a href="{{ url_for('audit_logs') }}" class="nav-link pl-4 {{ 'active' if request.path == url_for('audit_logs') }}"><i class="fas fa-history"></i>Audit Logs</a>
+        {% endif %}
+        <a href="{{ url_for('settings') }}" class="nav-link {{ 'active' if request.path == url_for('settings') }}"><i class="fas fa-cog"></i>Settings</a>
+    </nav>
+    {% endif %}
+    <main class="main-content {{ 'no-sidebar' if not current_user.is_authenticated or 'login' in request.path or 'register' in request.path }}" role="main">
+        <div class="container">
+            {% block breadcrumb %}
+            {% if request.path not in ['/login', '/register'] %}
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{% block breadcrumb_title %}{% endblock %}</li>
+                </ol>
+            </nav>
+            {% endif %}
+            {% endblock %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="mb-4">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'success' if category == 'success' else 'warning' if category == 'warning' else 'danger' }} alert-dismissible fade show fade-in" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+    {% if current_user.is_authenticated %}
+    <div class="chat-widget" onclick="toggleChat()" aria-label="Open support chat">
+        <i class="fas fa-comment-alt"></i> Support
+    </div>
+    <div class="chat-modal" id="chat-modal" role="dialog" aria-labelledby="chat-modal-title">
+        <div class="chat-modal-header">
+            <span id="chat-modal-title">Support Chat</span>
+            <button onclick="toggleChat()" aria-label="Close chat">X</button>
+        </div>
+        <div class="chat-modal-body">
+            <p>Support is currently offline.</p>
+        </div>
+        <div class="chat-modal-footer">
+            <input type="text" placeholder="Type a message..." disabled aria-label="Chat input">
+        </div>
+    </div>
+    {% endif %}
+    <footer class="footer w-full bg-primary-color text-white text-center py-4" role="contentinfo">
+        <p>© {{ current_time|strftime('%Y') if current_time is defined else '2025' }} Site Connect</p>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ url_for('static', filename='js/themeToggle.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/loadingSpinner.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/sidebarToggle.js') }}"></script>
+    <script>
+        function toggleChat() {
+            document.getElementById('chat-modal').classList.toggle('active');
+        }
+        function updateTime() {
+            const now = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata', hour12: true, hour: 'numeric', minute: 'numeric' });
+            const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric', year: 'numeric' });
+            const timeElement = document.querySelector('.user-info small');
+            if (timeElement) timeElement.textContent = `Time: ${now} IST, ${date}`;
+        }
+        setInterval(updateTime, 60000);
+        updateTime();
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block breadcrumb_title %}Dashboard{% endblock %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<style>
+    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+    .dashboard-card { transition: transform 0.3s ease; }
+    .dashboard-card:hover { transform: translateY(-4px); }
+    #site-map { border-radius: 8px; overflow: hidden; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="fade-in">
+    <div class="mb-8 text-center">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Welcome, {{ current_user.username }}!</h1>
+        <p class="text-lg text-gray-600 dark:text-gray-400 mt-2">Dashboard Overview as of {{ current_time|strftime('%I:%M %p IST, %d-%m-%Y') }}</p>
+        <button class="btn-primary mt-4 px-6 py-2" onclick="refreshDashboard()">Refresh Data</button>
+    </div>
+    <div class="dashboard-grid">
+        <!-- Order Status -->
+        <div class="card dashboard-card">
+            <div class="card-body">
+                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Order Status</h4>
+                <div class="text-center text-lg">
+                    <span class="font-bold">Total Orders: {{ status_counts|sum }}</span>
+                </div>
+                <div class="h-64 mt-4">
+                    <canvas id="orderStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incident Overview -->
+        <div class="card dashboard-card">
+            <div class="card-body">
+                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Incident Overview</h4>
+                <div class="text-center text-lg">
+                    <span class="font-bold">Open Incidents: {{ incident_types|sum }}</span>
+                </div>
+                <div class="h-64 mt-4">
+                    <canvas id="incidentTypesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Progress -->
+        <div class="card dashboard-card">
+            <div class="card-body">
+                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Task Progress</h4>
+                <div class="text-center text-lg">
+                    <span class="font-bold">Tasks Completed: {{ task_progress[0] }}</span>
+                </div>
+                <div class="h-64 mt-4">
+                    <canvas id="taskProgressChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Timeline -->
+        <div class="card dashboard-card">
+            <div class="card-body">
+                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Project Timeline</h4>
+                <ul class="space-y-3">
+                    {% for project in projects %}
+                    <li class="flex justify-between items-center">
+                        <span class="badge {{ 'bg-green-500' if project.status == 'In Progress' else 'bg-yellow-500' if project.status == 'Not Started' else 'bg-blue-500' }} px-3 py-1 text-sm">
+                            {{ project.name }}
+                        </span>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">{{ project.end_date }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Weather Update -->
+        <div class="card dashboard-card">
+            <div class="card-body">
+                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Weather Update</h4>
+                <ul class="space-y-2">
+                    {% for site, data in weather_data.items() %}
+                    <li class="text-sm">
+                        {{ site }}: {{ data.temp }}°C, {{ data.condition }}
+                    </li>
+                    {% endfor %}
+                </ul>
+                <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm">Updated: {{ current_time|strftime('%I:%M %p IST') }}</p>
+            </div>
+        </div>
+
+        <!-- Recent Orders -->
+        <div class="card dashboard-card">
+            <div class="card-body">
+                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Orders</h4>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Item</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                        <tr>
+                            <td>{{ order.order_id }}</td>
+                            <td>{{ order.item }}</td>
+                            <td>
+                                <span class="badge {{ 'bg-green-500' if order.status == 'Shipped' else 'bg-yellow-500' if order.status == 'In Production' else 'bg-gray-500' }} px-2 py-1 text-sm">
+                                    {{ order.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Site Map -->
+        <div class="card dashboard-card col-span-full">
+            <div class="card-body">
+                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Site Map</h4>
+                <div id="site-map" class="h-96 w-full"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const mapContainer = document.getElementById('site-map');
+        if (mapContainer) {
+            const map = L.map(mapContainer).setView([51.505, -0.09], 13); // Default view, replace with dynamic coords if available
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+            {% for order in recent_orders %}
+                {% if order.vehicle and order.vehicle.latitude and order.vehicle.longitude %}
+                    L.marker([{{ order.vehicle.latitude }}, {{ order.vehicle.longitude }}]).addTo(map)
+                        .bindPopup(`Order {{ order.order_id }}: {{ order.item }}<br>Status: {{ order.status }}`)
+                        .openPopup();
+                {% endif %}
+            {% endfor %}
+        }
+    });
+</script>
+{% endblock %}

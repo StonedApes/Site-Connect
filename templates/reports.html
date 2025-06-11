@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3>Reports</h3>
+    <p>Generate reports for your orders.</p>
+</div>
+<div class="card">
+    <div class="card-body">
+        <h4>Generate Order Report</h4>
+        <form method="POST">
+            <div class="mb-3">
+                <label for="report_type" class="form-label">Report Type</label>
+                <select name="report_type" id="report_type" class="form-select" required>
+                    <option value="orders">Orders</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" name="start_date" id="start_date" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="end_date" class="form-label">End Date</label>
+                <input type="date" name="end_date" id="end_date" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Generate Report</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

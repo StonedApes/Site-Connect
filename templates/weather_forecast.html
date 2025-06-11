@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Weather Forecast{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3>Weather Forecast</h3>
+    <p>View weather conditions for your sites.</p>
+</div>
+<div class="row">
+    {% for site_id, forecasts in weather_data.items %}
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h4>{{ site_id }}</h4>
+                <div class="weather-grid">
+                    {% for forecast in forecasts %}
+                    <div class="weather-card">
+                        <p><strong>{{ forecast.date }}</strong></p>
+                        <p>Temperature: {{ forecast.temp }}°C</p>
+                        <p>Condition: {{ forecast.condition }}</p>
+                        <p>Precipitation: {{ forecast.precipitation }}%</p>
+                        <p>Wind Speed: {{ forecast.wind_speed }} m/s</p>
+                        {% if forecast.warning %}
+                        <p class="warning">{{ forecast.warning }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

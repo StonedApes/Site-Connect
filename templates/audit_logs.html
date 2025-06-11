@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Audit Logs{% endblock %}
+{% block content %}
+<div class="welcome-message">
+    <h3 class="text-2xl font-bold">Audit Logs</h3>
+    <p class="text-gray-600 dark:text-gray-400">View user activity logs.</p>
+</div>
+<div class="card">
+    <div class="card-body">
+        <h4 class="text-xl font-semibold mb-4">Activity Logs</h4>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.user | escape }}</td>
+                        <td>{{ log.action | escape }}</td>
+                        <td>{{ log.details | escape }}</td>
+                        <td>{{ log.timestamp }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {{ pagination.links }}
+    </div>
+</div>
+{% endblock %}
