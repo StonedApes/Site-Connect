@@ -4,7 +4,7 @@ flask-login==0.6.3
 flask-wtf==1.2.1
 flask-caching==2.3.0
 flask-socketio==5.3.6
-flask-paginate==2024.4.12  # Updated from 2024.10.24
+flask-paginate==2024.4.12
 psycopg2-binary==2.9.10
 redis==5.0.8
 requests==2.32.3
@@ -12,3 +12,4 @@ python-dotenv==1.0.1
 gunicorn==23.0.0
 reportlab==4.2.2
 Flask-RESTful==0.3.10
+flask-migrate==4.0.5  
