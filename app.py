@@ -28,6 +28,7 @@ from flask import session as flask_session
 from dotenv import load_dotenv
 import pytz
 from wtforms.validators import DataRequired
+from flask_migrate import Migrate
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -53,12 +54,9 @@ cache = Cache(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 login_manager = LoginManager()
 login_manager.init_app(app)
-# User loader callback for Flask-Login
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
 login_manager.login_view = 'login'
 api = Api(app)
+migrate = Migrate(app, db)  # Moved after app definition
 
 # Timezone for IST
 IST = pytz.timezone('Asia/Kolkata')
@@ -683,9 +681,6 @@ def handle_error(e):
 def index():
     return redirect(url_for('login'))
 
-from datetime import datetime
-from pytz import timezone
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
@@ -696,8 +691,8 @@ def login():
             log_action('login', {'user_id': user.id})
             return redirect(url_for('dashboard'))
         flash('Invalid username or password.', 'danger')
-    current_time = datetime.now(timezone('Asia/Kolkata'))
-    return render_template('login.html', form=form, current_time=current_time)  
+    current_time = datetime.now(IST)
+    return render_template('login.html', form=form, current_time=current_time)
 
 @app.route('/company_login', methods=['GET', 'POST'])
 @permission_required('create_orders')
@@ -792,7 +787,7 @@ def dashboard():
     except Exception as e:
         logger.error(f"Error in dashboard view: {e}", exc_info=True)
         return handle_error(e)
-    
+
 @app.route('/profile')
 @login_required
 def profile():
@@ -1003,33 +998,6 @@ def subcontractor_payments(subcontractor_id):
     payments = Payment.query.filter_by(subcontractor_id=subcontractor_id, company_id=current_user.company_id).order_by(Payment.due_date).all()
     return render_template('subcontractor_payments.html', subcontractor=subcontractor, form=form, payments=payments)
 
-@app.route('/daily_reports', methods=['GET', 'POST'])
-@login_required
-def daily_reports():
-    form = DailyReportForm()
-    form.site_id.choices = [(s.site_id, s.name) for s in Site.query.filter_by(company_id=current_user.company_id).all()]
-    if form.validate_on_submit():
-        report = DailyReport(
-            company_id=current_user.company_id,
-            site_id=form.site_id.data,
-            date=form.date.data,
-            manpower=form.manpower.data,
-            safety_activities=form.safety_activities.data,
-            progress_notes=form.progress_notes.data,
-            reported_by=current_user.username
-        )
-        db.session.add(report)
-        db.session.commit()
-        log_action('create_daily_report', {'report_id': report.report_id})
-        flash('Daily report submitted successfully!', 'success')
-        return redirect(url_for('daily_reports'))
-    page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
-    per_page = 10
-    total = DailyReport.query.filter_by(company_id=current_user.company_id).count()
-    reports = DailyReport.query.filter_by(company_id=current_user.company_id).order_by(DailyReport.date.desc()).offset(offset).limit(per_page).all()
-    pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap5')
-    return render_template('daily_reports.html', form=form, reports=reports, pagination=pagination)
-
 @app.route('/insights')
 @login_required
 def insights():
@@ -1163,10 +1131,13 @@ def equipment():
     form = EquipmentForm()
     if form.validate_on_submit():
         equipment = Equipment(
+            company_id=current_user.company_id,
             name=form.name.data,
             type=form.type.data,
             last_maintenance_date=form.last_maintenance_date.data,
-            next_maintenance_date=form.next_maintenance_date.data
+            next_maintenance_date=form.next_maintenance_date.data,
+            status=form.status.data,
+            maintenance_notes=form.maintenance_notes.data
         )
         db.session.add(equipment)
         db.session.commit()
@@ -1174,10 +1145,10 @@ def equipment():
         return redirect(url_for('equipment'))
     page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
     per_page = 10
-    total = Equipment.query.count()
-    equipment = Equipment.query.offset(offset).limit(per_page).all()
+    total = Equipment.query.filter_by(company_id=current_user.company_id).count()
+    equipment = Equipment.query.filter_by(company_id=current_user.company_id).offset(offset).limit(per_page).all()
     pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap5')
-    current_time = datetime.now(timezone('Asia/Kolkata'))
+    current_time = datetime.now(IST)
     return render_template('equipment.html', form=form, equipment=equipment, pagination=pagination, current_time=current_time)
 
 @app.route('/edit_equipment/<int:equipment_id>', methods=['GET', 'POST'])
