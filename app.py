@@ -63,7 +63,7 @@ migrate = Migrate(app, db)  # Moved after app definition
 
 # Timezone for IST
 IST = pytz.timezone('Asia/Kolkata')
-
+    
 # Custom filter for strftime
 @app.template_filter('strftime')
 def strftime_filter(value, format='%Y-%m-%d %H:%M'):
