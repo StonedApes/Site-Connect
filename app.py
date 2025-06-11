@@ -54,6 +54,9 @@ cache = Cache(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 login_manager = LoginManager()
 login_manager.init_app(app)
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 login_manager.login_view = 'login'
 api = Api(app)
 migrate = Migrate(app, db)  # Moved after app definition
