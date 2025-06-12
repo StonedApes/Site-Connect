@@ -1294,69 +1294,32 @@ def view_blueprint(blueprint_id):
     pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap5')
     return render_template('view_blueprint.html', blueprint=blueprint, comments=comments, pagination=pagination)
 
-@app.route('/reports', methods=['GET', 'POST'])
+@app.route('/daily_reports', methods=['GET', 'POST'])
 @login_required
-def reports():
-    if request.method == 'POST':
-        report_type = request.form.get('report_type')
-        start_date = request.form.get('start_date')
-        end_date = request.form.get('end_date')
-        if not start_date or not end_date:
-            flash('Start and end dates are required.', 'danger')
-            return redirect(url_for('reports'))
-        try:
-            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-            if start_date > end_date:
-                flash('Start date must be before end date.', 'danger')
-                return redirect(url_for('reports'))
-        except ValueError:
-            flash('Invalid date format.', 'danger')
-            return redirect(url_for('reports'))
-
-        if report_type == 'orders':
-            orders = Order.query.filter_by(company_id=current_user.company_id).filter(
-                Order.timestamp.between(start_date, end_date)
-            ).order_by(Order.timestamp).all()
-            buffer = BytesIO()
-            pdf = canvas.Canvas(buffer, pagesize=letter)
-            pdf.setTitle('Order Report')
-            pdf.drawString(100, 750, f'Order Report: {start_date} to {end_date}')
-            y = 700
-            for order in orders:
-                text = (f"Order ID: {order.order_id}, Item: {order.item}, Quantity: {order.quantity}, "
-                        f"Site: {order.site.name}, Status: {order.status}, Timestamp: {order.timestamp}")
-                pdf.drawString(100, y, text)
-                y -= 20
-                if y < 50:
-                    pdf.showPage()
-                    y = 750
-            pdf.save()
-            buffer.seek(0)
-            log_action('generate_report', {'type': 'orders', 'start_date': start_date, 'end_date': end_date})
-            return send_file(buffer, as_attachment=True, download_name=f'order_report_{datetime.now().strftime("%Y%m%d%H%M%S")}.pdf', mimetype='application/pdf')
-        elif report_type == 'incidents':
-            incidents = Incident.query.filter_by(company_id=current_user.company_id).filter(
-                Incident.date.between(start_date, end_date)
-            ).order_by(Incident.date).all()
-            buffer = BytesIO()
-            pdf = canvas.Canvas(buffer, pagesize=letter)
-            pdf.setTitle('Incident Report')
-            pdf.drawString(100, 750, f'Incident Report: {start_date} to {end_date}')
-            y = 700
-            for incident in incidents:
-                text = (f"Incident ID: {incident.incident_id}, Type: {incident.type}, Severity: {incident.severity}, "
-                        f"Date: {incident.date}, Reported By: {incident.reported_by}")
-                pdf.drawString(100, y, text)
-                y -= 20
-                if y < 50:
-                    pdf.showPage()
-                    y = 750
-            pdf.save()
-            buffer.seek(0)
-            log_action('generate_report', {'type': 'incidents', 'start_date': start_date, 'end_date': end_date})
-            return send_file(buffer, as_attachment=True, download_name=f'incident_report_{datetime.now().strftime("%Y%m%d%H%M%S")}.pdf', mimetype='application/pdf')
-    return render_template('reports.html')
+def daily_reports():
+    form = DailyReportForm()
+    form.site_id.choices = [(s.site_id, s.name) for s in Site.query.filter_by(company_id=current_user.company_id).all()]
+    if form.validate_on_submit():
+        report = DailyReport(
+            company_id=current_user.company_id,
+            site_id=form.site_id.data,
+            date=form.date.data,
+            manpower=form.manpower.data,
+            safety_activities=form.safety_activities.data,
+            progress_notes=form.progress_notes.data,
+            reported_by=current_user.username
+        )
+        db.session.add(report)
+        db.session.commit()
+        log_action('create_daily_report', {'report_id': report.report_id})
+        flash('Daily report submitted successfully!', 'success')
+        return redirect(url_for('daily_reports'))
+    page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
+    per_page = 10
+    total = DailyReport.query.filter_by(company_id=current_user.company_id).count()
+    reports = DailyReport.query.filter_by(company_id=current_user.company_id).order_by(DailyReport.date.desc()).offset(offset).limit(per_page).all()
+    pagination = Pagination(page=page, per_page=per_page, total=total, css_framework='bootstrap5')
+    return render_template('daily_reports.html', form=form, reports=reports, pagination=pagination)
 
 @app.route('/mobile')
 @login_required
