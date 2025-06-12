@@ -2163,7 +2163,7 @@ def set_theme():
 @app.route('/favicon.ico')
 def favicon():
     try:
-        return send_file(os.path.join(app.root_path, 'static', 'favicon.ico'), mimetype='image/vnd.microsoft.icon')
+        return send_file(os.path.join(app.root_path, 'static/images', 'favicon.ico'), mimetype='image/vnd.microsoft.icon')
     except FileNotFoundError:
         abort(404)
 
