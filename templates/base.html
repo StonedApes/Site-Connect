@@ -47,12 +47,12 @@
         <a href="{{ url_for('track_orders') }}" class="nav-link {{ 'active' if request.path == url_for('track_orders') }}"><i class="fas fa-truck"></i>Track Orders</a>
         <a href="{{ url_for('incidents') }}" class="nav-link {{ 'active' if request.path == url_for('incidents') }}"><i class="fas fa-exclamation-triangle"></i>Incidents</a>
         <a href="{{ url_for('subcontractor_portal') }}" class="nav-link {{ 'active' if request.path == url_for('subcontractor_portal') }}"><i class="fas fa-users"></i>Subcontractors</a>
-<a href="{{ url_for('daily_reports') }}" class="nav-link {{ 'active' if request.path == url_for('daily_reports') }}"><i class="fas fa-clipboard-list"></i>Daily Reports</a>        <a href="{{ url_for('insights') }}" class="nav-link {{ 'active' if request.path == url_for('insights') }}"><i class="fas fa-chart-line"></i>Insights</a>
+        <a href="{{ url_for('daily_reports') }}" class="nav-link {{ 'active' if request.path == url_for('daily_reports') }}"><i class="fas fa-clipboard-list"></i>Daily Reports</a>        <a href="{{ url_for('insights') }}" class="nav-link {{ 'active' if request.path == url_for('insights') }}"><i class="fas fa-chart-line"></i>Insights</a>
         <a href="{{ url_for('notifications') }}" class="nav-link {{ 'active' if request.path == url_for('notifications') }}"><i class="fas fa-bell"></i>Notifications {% if notifications_count > 0 %}<span class="badge">{{ notifications_count }}</span>{% endif %}</a>
         <a href="{{ url_for('equipment') }}" class="nav-link {{ 'active' if request.path == url_for('equipment') }}"><i class="fas fa-tools"></i>Equipment</a>
         <a href="{{ url_for('weather_forecast') }}" class="nav-link {{ 'active' if request.path == url_for('weather_forecast') }}"><i class="fas fa-cloud-sun"></i>Weather</a>
         <a href="{{ url_for('blueprints') }}" class="nav-link {{ 'active' if request.path == url_for('blueprints') }}"><i class="fas fa-drafting-compass"></i>Blueprints</a>
-        <a href="{{ url_for('reports') }}" class="nav-link {{ 'active' if request.path == url_for('reports') }}"><i class="fas fa-file-export"></i>Reports</a>
+        <a href="{{ url_for('daily_reports') }}" class="nav-link {{ 'active' if request.path == url_for('daily_reports') }}"><i class="fas fa-clipboard-list"></i>Daily Reports</a>
         <a href="{{ url_for('mobile') }}" class="nav-link {{ 'active' if request.path == url_for('mobile') }}"><i class="fas fa-mobile-alt"></i>Mobile</a>
         <a href="{{ url_for('tasks') }}" class="nav-link {{ 'active' if request.path == url_for('tasks') }}"><i class="fas fa-tasks"></i>Tasks</a>
         <a href="{{ url_for('timesheets') }}" class="nav-link {{ 'active' if request.path == url_for('timesheets') }}"><i class="fas fa-clock"></i>Timesheets</a>

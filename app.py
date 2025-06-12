@@ -29,6 +29,12 @@ from dotenv import load_dotenv
 import pytz
 from wtforms.validators import DataRequired
 from flask_migrate import Migrate
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from io import BytesIO
+import unittest
+from app import app, db
+from app.models import User, Company, Role
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -108,6 +114,7 @@ class User(UserMixin, db.Model):
     company_id = db.Column(db.Integer, db.ForeignKey('companies.company_id'), nullable=False)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(100), unique=True)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.role_id'), nullable=False)
     role = db.relationship('Role', backref='users', lazy='joined')  # Eager loading
     audit_logs = db.relationship('AuditLog', backref='user', lazy=True)
@@ -136,6 +143,7 @@ class Employee(db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     role = db.Column(db.String(50), nullable=False)
     phone = db.Column(db.String(20))
+    contact = db.Column(db.String(100))  # Added to match fix_schema.py
     licenses = db.relationship('License', backref='employee', lazy=True)
     inductions = db.relationship('Induction', backref='employee', lazy=True)
     timesheets = db.relationship('Timesheet', backref='employee', lazy=True)
@@ -218,6 +226,8 @@ class Equipment(db.Model):
     last_maintenance_date = db.Column(db.Date)
     next_maintenance_date = db.Column(db.Date, nullable=False)
     maintenance_notes = db.Column(db.Text)
+    site_id = db.Column(db.Integer, db.ForeignKey('sites.site_id'))
+    site = db.relationship('Site', backref='equipment', lazy=True)
 
 class Weather(db.Model):
     __tablename__ = 'weather'
@@ -285,6 +295,8 @@ class Inventory(db.Model):
     reorder_point = db.Column(db.Integer, nullable=False)
     unit_price = db.Column(db.Float)
     location = db.Column(db.String(100))
+    site_id = db.Column(db.Integer, db.ForeignKey('sites.site_id'))
+    site = db.relationship('Site', backref='inventory', lazy=True)  
 
 class SafetyAudit(db.Model):
     __tablename__ = 'safety_audits'
@@ -376,6 +388,8 @@ class AuditLog(db.Model):
     action = db.Column(db.String(100), nullable=False)
     details = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    
 
 # Forms
 class PasswordValidator:
@@ -554,6 +568,50 @@ class RoleForm(FlaskForm):
     permissions = SelectField('Permissions', choices=[], multiple=True, coerce=int, validators=[DataRequired()])
     submit = SubmitField('Create Role')
 
+class AppTestCase(unittest.TestCase):
+    def setUp(self):
+        app.config['TESTING'] = True
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+        self.app = app.test_client()
+        with app.app_context():
+            db.create_all()
+            company = Company(name='Test Company')
+            role = Role(name='Admin')
+            db.session.add_all([company, role])
+            db.session.commit()
+            user = User(
+                company_id=company.company_id,
+                username='testuser',
+                password=generate_password_hash('testpass123'),
+                role_id=role.role_id
+            )
+            db.session.add(user)
+            db.session.commit()
+
+    def tearDown(self):
+        with app.app_context():
+            db.session.remove()
+            db.drop_all()
+
+    def test_login(self):
+        response = self.app.post('/login', data={
+            'username': 'testuser',
+            'password': 'testpass123'
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Welcome, testuser!', response.data)
+
+    def test_invalid_login(self):
+        response = self.app.post('/login', data={
+            'username': 'testuser',
+            'password': 'wrongpass'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Invalid username or password.', response.data)
+
+if __name__ == '__main__':
+    unittest.main()
+
 # RBAC Decorator
 def permission_required(permission):
     def decorator(f):
@@ -590,7 +648,7 @@ def init_db():
                 Permission(name='manage_users'),
                 Permission(name='manage_projects'),
                 Permission(name='view_documents'),
-                Permission(name='upload_documents'),
+                Permission(name='upload_documents'),    
             ]
             db.session.add_all(permissions)
             db.session.commit()
@@ -612,27 +670,28 @@ def init_db():
             conn.execute(text('CREATE INDEX IF NOT EXISTS idx_employee_id ON licenses(employee_id)'))
             conn.execute(text('CREATE INDEX IF NOT EXISTS idx_company_id ON tasks(company_id)'))
             conn.execute(text('CREATE INDEX IF NOT EXISTS idx_company_id ON projects(company_id)'))
+            conn.execute(text('CREATE INDEX IF NOT EXISTS idx_company_id ON incidents(company_id)'))
+            conn.execute(text('CREATE INDEX IF NOT EXISTS idx_company_id ON equipment(company_id)'))
+            conn.execute(text('CREATE INDEX IF NOT EXISTS idx_company_id ON inventory(company_id)'))
             conn.commit()
 
 # Utility Functions
+
 @cache.memoize(timeout=60)
 def get_notifications_count(company_id):
     today = date.today()
-    with db.session() as session:
-        counts = session.execute(
-            text("""
-                SELECT 
-                    (SELECT COUNT(*) FROM licenses WHERE company_id = :company_id AND expiry_date <= :future AND expiry_date >= :today) AS expiring_licenses,
-                    (SELECT COUNT(*) FROM licenses WHERE company_id = :company_id AND expiry_date < :today) AS expired_licenses,
-                    (SELECT COUNT(*) FROM incidents WHERE company_id = :company_id AND status = 'Open') AS open_incidents,
-                    (SELECT COUNT(*) FROM equipment WHERE company_id = :company_id AND next_maintenance_date <= :future30) AS equipment_due,
-                    (SELECT COUNT(*) FROM inventory WHERE company_id = :company_id AND quantity <= reorder_point) AS low_inventory,
-                    (SELECT COUNT(*) FROM payments WHERE company_id = :company_id AND status = 'Pending' AND due_date < :today) AS overdue_payments,
-                    (SELECT COUNT(*) FROM safety_audits WHERE company_id = :company_id AND status = 'Scheduled' AND audit_date <= :future30 AND audit_date >= :today) AS upcoming_audits
-            """),
-            {'company_id': company_id, 'today': today, 'future': today + timedelta(days=60), 'future30': today + timedelta(days=30)}
-        ).first()
-        return sum(counts) if counts else 0
+    future_60 = today + timedelta(days=60)
+    future_30 = today + timedelta(days=30)
+    counts = {
+        'expiring_licenses': License.query.filter_by(company_id=company_id).filter(License.expiry_date.between(today, future_60)).count(),
+        'expired_licenses': License.query.filter_by(company_id=company_id).filter(License.expiry_date < today).count(),
+        'open_incidents': Incident.query.filter_by(company_id=company_id, status='Open').count(),
+        'equipment_due': Equipment.query.filter_by(company_id=company_id).filter(Equipment.next_maintenance_date <= future_30).count(),
+        'low_inventory': Inventory.query.filter_by(company_id=company_id).filter(Inventory.quantity <= Inventory.reorder_point).count(),
+        'overdue_payments': Payment.query.filter_by(company_id=company_id, status='Pending').filter(Payment.due_date < today).count(),
+        'upcoming_audits': SafetyAudit.query.filter_by(company_id=company_id, status='Scheduled').filter(SafetyAudit.audit_date.between(today, future_30)).count()
+    }
+    return sum(counts.values())
 
 def send_email_notification(to_email, subject, body):
     smtp_server = os.environ.get('SMTP_SERVER')
@@ -680,6 +739,63 @@ def handle_error(e):
     return render_template('error.html', error=str(e), notifications_count=notifications_count), 500
 
 # Routes
+
+@app.route('/reports', methods=['GET', 'POST'])
+@login_required
+def reports():
+    if request.method == 'POST':
+        report_type = request.form.get('report_type')
+        start_date = datetime.strptime(request.form.get('start_date'), '%Y-%m-%d').date()
+        end_date = datetime.strptime(request.form.get('end_date'), '%Y-%m-%d').date()
+        if report_type == 'orders':
+            orders = Order.query.filter(
+                Order.company_id == current_user.company_id,
+                Order.timestamp >= start_date,
+                Order.timestamp <= end_date
+            ).all()
+            buffer = BytesIO()
+            c = canvas.Canvas(buffer, pagesize=letter)
+            c.drawString(100, 750, f"Order Report: {start_date} to {end_date}")
+            y = 700
+            for order in orders:
+                c.drawString(100, y, f"ID: {order.order_id}, Item: {order.item}, Qty: {order.quantity}, Status: {order.status}")
+                y -= 20
+                if y < 50:
+                    c.showPage()
+                    y = 750
+            c.save()
+            buffer.seek(0)
+            return send_file(buffer, as_attachment=True, download_name='order_report.pdf', mimetype='application/pdf')
+    return render_template('reports.html')
+
+@app.route('/delete_assignment/<int:assignment_id>/<int:project_id>')
+@login_required
+@permission_required('manage_projects')
+def delete_assignment(assignment_id, project_id):
+    assignment = ProjectAssignment.query.filter_by(
+        assignment_id=assignment_id,
+        project_id=project_id,
+        project=Project.query.filter_by(project_id=project_id, company_id=current_user.company_id).first()
+    ).first()
+    if not assignment:
+        flash('Assignment not found.', 'danger')
+        return redirect(url_for('project_detail', project_id=project_id))
+    db.session.delete(assignment)
+    db.session.commit()
+    log_action('delete_assignment', {'assignment_id': assignment_id})
+    flash('Assignment removed successfully!', 'success')
+    return redirect(url_for('project_detail', project_id=project_id))
+
+
+
+
+
+
+
+
+
+
+
 @app.route('/')
 def index():
     return redirect(url_for('login'))
@@ -698,7 +814,6 @@ def login():
     return render_template('login.html', form=form, current_time=current_time)
 
 @app.route('/company_login', methods=['GET', 'POST'])
-@permission_required('create_orders')
 def company_login():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
@@ -715,6 +830,7 @@ def company_login():
             flash('Login successful!', 'success')
             return redirect(url_for('dashboard'))
         flash('Invalid credentials.', 'danger')
+    return render_template('company_login.html', form=form, notifications_count=0)
     return render_template('company_login.html', form=form, notifications_count=0)
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -762,34 +878,38 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    try:
-        with db.session() as db_session:
-            # Comprehensive mock data
-            status_counts = [15, 10, 12, 8]  # Pending, Received, In Production, Shipped
-            incident_types = [5, 7, 3]  # High, Medium, Low
-            task_progress = [66, 34]  # Completed, Remaining
-            recent_orders = [
-                {'order_id': '001', 'item': 'Concrete Mix', 'status': 'Shipped'},
-                {'order_id': '002', 'item': 'Steel Beams', 'status': 'In Production'},
-                {'order_id': '003', 'item': 'Tools Kit', 'status': 'Pending'}
-            ]
-            projects = [
-                {'name': 'Office Building', 'status': 'In Progress', 'end_date': '2025-12-01'},
-                {'name': 'Warehouse', 'status': 'Not Started', 'end_date': '2026-03-15'},
-                {'name': 'Bridge', 'status': 'Planned', 'end_date': '2026-06-30'}
-            ]
-            weather_data = {'Site A': {'temp': 28, 'condition': 'Sunny'}, 'Site B': {'temp': 22, 'condition': 'Cloudy'}}
-            compliance_alerts = [
-                {'type': 'License', 'name': 'John Doe', 'expiry_date': '2025-06-15', 'days_remaining': 5},
-                {'type': 'Permit', 'name': 'Site A', 'expiry_date': '2025-06-20', 'days_remaining': 10}
-            ]
+    status_counts = db.session.query(
+        db.func.sum(db.case([(Order.status == 'Pending', 1)], else_=0)),
+        db.func.sum(db.case([(Order.status == 'Received', 1)], else_=0)),
+        db.func.sum(db.case([(Order.status == 'In Production', 1)], else_=0)),
+        db.func.sum(db.case([(Order.status == 'Shipped', 1)], else_=0))
+    ).filter_by(company_id=current_user.company_id).first()
+    status_counts = [count or 0 for count in status_counts]
 
-            return render_template('dashboard.html', status_counts=status_counts, incident_types=incident_types,
-                                  task_progress=task_progress, recent_orders=recent_orders, projects=projects,
-                                  weather_data=weather_data, compliance_alerts=compliance_alerts)
-    except Exception as e:
-        logger.error(f"Error in dashboard view: {e}", exc_info=True)
-        return handle_error(e)
+    incident_types = db.session.query(
+        db.func.sum(db.case([(Incident.severity == 'High', 1)], else_=0)),
+        db.func.sum(db.case([(Incident.severity == 'Medium', 1)], else_=0)),
+        db.func.sum(db.case([(Incident.severity == 'Low', 1)], else_=0))
+    ).filter_by(company_id=current_user.company_id).first()
+    incident_types = [count or 0 for count in incident_types]
+
+    task_progress = db.session.query(
+        db.func.sum(db.case([(Task.status == 'Completed', 1)], else_=0)),
+        db.func.sum(db.case([(Task.status != 'Completed', 1)], else_=0))
+    ).filter_by(company_id=current_user.company_id).first()
+    task_progress = [count or 0 for count in task_progress]
+
+    recent_orders = Order.query.filter_by(company_id=current_user.company_id).order_by(Order.timestamp.desc()).limit(3).all()
+    projects = Project.query.filter_by(company_id=current_user.company_id).limit(3).all()
+    weather_data = {site.name: [{'temp': w.temperature, 'condition': w.condition}] for site in Site.query.filter_by(company_id=current_user.company_id).all() for w in Weather.query.filter_by(site_id=site.site_id).limit(1)}
+    compliance_alerts = [
+        {'type': 'License', 'name': l.employee.name, 'expiry_date': l.expiry_date.strftime('%Y-%m-%d'), 'days_remaining': (l.expiry_date - date.today()).days}
+        for l in License.query.filter(License.company_id == current_user.company_id, License.expiry_date <= date.today() + timedelta(days=30)).limit(2).all()
+    ]
+
+    return render_template('dashboard.html', status_counts=status_counts, incident_types=incident_types,
+                          task_progress=task_progress, recent_orders=recent_orders, projects=projects,
+                          weather_data=weather_data, compliance_alerts=compliance_alerts)
 
 @app.route('/profile')
 @login_required
@@ -1933,9 +2053,11 @@ def settings():
         if User.query.filter_by(username=form.username.data).filter(User.id != current_user.id).first():
             flash('Username already exists.', 'danger')
             return redirect(url_for('settings'))
+        if form.email.data and User.query.filter_by(email=form.email.data).filter(User.id != current_user.id).first():
+            flash('Email already exists.', 'danger')
+            return redirect(url_for('settings'))
         current_user.username = form.username.data
-        if form.email.data:
-            current_user.email = form.email.data
+        current_user.email = form.email.data or None
         if form.password.data:
             current_user.password = generate_password_hash(form.password.data)
         db.session.commit()
@@ -1950,22 +2072,16 @@ def resource_allocation():
     sites = Site.query.filter_by(company_id=current_user.company_id).all()
     resources = []
     for site in sites:
-        equipment = Equipment.query.filter_by(company_id=current_user.company_id).filter(
-            Equipment.site_id == site.site_id
+        equipment_count = Equipment.query.filter_by(company_id=current_user.company_id, site_id=site.site_id).count()
+        labor_count = db.session.query(Employee).join(ProjectAssignment).join(Project).filter(
+            Project.site_id == site.site_id, Project.company_id == current_user.company_id
         ).count()
-        labor = Employee.query.join(ProjectAssignment).filter(
-            ProjectAssignment.project_id.in_(
-                db.session.query(Project.project_id).filter(Project.site_id == site.site_id)
-            )
-        ).count()
-        inventory = Inventory.query.filter_by(company_id=current_user.company_id).filter(
-            Inventory.site_id == site.site_id
-        ).count()
+        inventory_count = Inventory.query.filter_by(company_id=current_user.company_id, site_id=site.site_id).count()
         resources.append({
             'site': site.name,
-            'equipment': f'{equipment} items',
-            'labor': f'{labor} workers',
-            'materials': f'{inventory} items'
+            'equipment': f'{equipment_count} items',
+            'labor': f'{labor_count} workers',
+            'materials': f'{inventory_count} items'
         })
     return render_template('resource_allocation.html', resources=resources)
 

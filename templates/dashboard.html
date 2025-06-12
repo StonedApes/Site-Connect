@@ -133,10 +133,10 @@
 {% endblock %}
 {% block extra_scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', function() {
         const mapContainer = document.getElementById('site-map');
         if (mapContainer) {
-            const map = L.map(mapContainer).setView([51.505, -0.09], 13); // Default view, replace with dynamic coords if available
+            const map = L.map(mapContainer).setView([51.505, -0.09], 13); // Default view
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             }).addTo(map);

@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Function to get chart text color based on theme
     function getChartTextColor() {
         return document.body.classList.contains('dark-mode') ? '#b3b3b3' : '#000000';
     }
@@ -11,15 +10,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const ganttCanvas = document.getElementById('ganttChart');
     if (ganttCanvas) {
         const labels = JSON.parse(ganttCanvas.getAttribute('data-labels') || '[]');
+        const startDates = JSON.parse(ganttCanvas.getAttribute('data-start-dates') || '[]');
+        const dueDates = JSON.parse(ganttCanvas.getAttribute('data-due-dates') || '[]');
         const colors = JSON.parse(ganttCanvas.getAttribute('data-colors') || '[]');
+
+        const data = labels.map((label, index) => ({
+            x: [new Date(startDates[index]), new Date(dueDates[index])],
+            y: label,
+            backgroundColor: colors[index]
+        }));
 
         const ganttChart = new Chart(ganttCanvas.getContext('2d'), {
             type: 'bar',
             data: {
-                labels: labels,
                 datasets: [{
                     label: 'Tasks',
-                    data: labels.map((_, index) => index + 1), // Simple index-based data for demo
+                    data: data,
                     backgroundColor: colors,
                     borderColor: getChartBorderColor(),
                     borderWidth: 1
@@ -30,40 +36,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 responsive: true,
                 scales: {
                     x: {
-                        ticks: {
-                            color: getChartTextColor()
-                        },
-                        grid: {
-                            color: getChartBorderColor()
-                        }
+                        type: 'time',
+                        time: { unit: 'day' },
+                        ticks: { color: getChartTextColor() },
+                        grid: { color: getChartBorderColor() }
                     },
                     y: {
-                        ticks: {
-                            color: getChartTextColor()
-                        },
-                        grid: {
-                            color: getChartBorderColor()
-                        }
+                        ticks: { color: getChartTextColor() },
+                        grid: { color: getChartBorderColor() }
                     }
                 },
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: {
-                            color: getChartTextColor(),
-                            font: {
-                                size: 14
-                            }
-                        }
-                    },
-                    tooltip: {
-                        enabled: true
+                        labels: { color: getChartTextColor(), font: { size: 14 } }
                     }
                 }
             }
         });
 
-        // Update chart colors when theme changes
         document.addEventListener('themeChanged', function() {
             ganttChart.options.scales.x.ticks.color = getChartTextColor();
             ganttChart.options.scales.x.grid.color = getChartBorderColor();

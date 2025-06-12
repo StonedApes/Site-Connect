@@ -35,4 +35,18 @@
         </form>
     </div>
 </div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+    const socket = io('/chat', { path: '/socket.io' });
+    socket.on('chat_message', function(data) {
+        const chatMessages = document.getElementById('chat-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'p-2 border-b border-gray-200 dark:border-gray-700';
+        messageDiv.innerHTML = `<strong>${data.username}</strong> (${data.timestamp}): ${data.text}`;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+</script>
+
 {% endblock %}
