@@ -3,123 +3,62 @@
 {% block breadcrumb %}Resource Allocation{% endblock %}
 {% block content %}
 <div class="welcome-message">
-    <h3>Resource Allocation Dashboard</h3>
-    <p>Manage resource allocation across sites as of 2025-06-02 19:42 IST.</p>
+    <h3 class="text-2xl font-bold">Resource Allocation Dashboard</h3>
+    <p class="text-gray-600 dark:text-gray-400">Optimize resource allocation across sites as of {{ current_time|strftime('%I:%M %p IST, %d-%m-%Y') }}. Status: {{ status }}</p>
 </div>
-<div class="row">
-    <div class="col-md-12">
-        <div class="card mb-4">
-            <div class="card-body">
-                <h4>Resource Allocation Overview</h4>
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover" id="resource-allocation-table">
-                        <thead>
-                            <tr>
-                                <th onclick="sortTable('resource-allocation-table', 'Site')">Site</th>
-                                <th onclick="sortTable('resource-allocation-table', 'Equipment')">Equipment</th>
-                                <th onclick="sortTable('resource-allocation-table', 'Labor')">Labor</th>
-                                <th onclick="sortTable('resource-allocation-table', 'Materials')">Materials</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Site A</td>
-                                <td>3 Cranes, 2 Forklifts</td>
-                                <td>20 Workers</td>
-                                <td>500 Concrete Blocks, 200 Steel Beams</td>
-                                <td>
-                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#reallocateSiteAModal" aria-label="Reallocate resources for Site A">Reallocate</button>
-                                </td>
-                            </tr>
-                            <!-- Reallocate Site A Modal -->
-                            <div class="modal fade" id="reallocateSiteAModal" tabindex="-1" aria-labelledby="reallocateSiteAModalLabel" aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="reallocateSiteAModalLabel">Reallocate Resources for Site A</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <p><strong>Current Allocation:</strong></p>
-                                            <p>Equipment: 3 Cranes, 2 Forklifts</p>
-                                            <p>Labor: 20 Workers</p>
-                                            <p>Materials: 500 Concrete Blocks, 200 Steel Beams</p>
-                                            <p><strong>Mock Action:</strong> Reallocate resources (e.g., move 1 Crane to Site B, add 5 Workers).</p>
-                                            <button type="button" class="btn btn-primary" onclick="alert('Resources reallocated successfully (mock action).')" aria-label="Confirm reallocation for Site A">Confirm Reallocation</button>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                        </div>
-                                    </div>
+<div class="card">
+    <div class="card-body">
+        <h4 class="text-xl font-semibold mb-4">Resource Allocation Overview</h4>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover" id="resource-allocation-table">
+                <thead>
+                    <tr>
+                        <th>Site</th>
+                        <th>Equipment</th>
+                        <th>Labor</th>
+                        <th>Materials</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alloc in allocations %}
+                    <tr>
+                        <td>{{ alloc.site }}</td>
+                        <td>{{ alloc.equipment }}</td>
+                        <td>{{ alloc.labor }}</td>
+                        <td>{{ alloc.materials }}</td>
+                        <td>
+                            <button type="button" class="btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#reallocateModal{{ loop.index }}">Reallocate</button>
+                        </td>
+                    </tr>
+                    <!-- Reallocate Modal -->
+                    <div class="modal fade" id="reallocateModal{{ loop.index }}" tabindex="-1" aria-labelledby="reallocateModalLabel{{ loop.index }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="reallocateModalLabel{{ loop.index }}">Reallocate Resources for {{ alloc.site }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p><strong>Current Allocation:</strong></p>
+                                    <p>Equipment: {{ alloc.equipment }}</p>
+                                    <p>Labor: {{ alloc.labor }}</p>
+                                    <p>Materials: {{ alloc.materials }}</p>
+                                    <p><strong>Action:</strong> Confirm to apply this optimized allocation.</p>
+                                    <form method="POST" action="{{ url_for('apply_allocation', site_id=alloc.site_id) }}">
+                                        <input type="hidden" name="alloc_data" value="{{ alloc|tojson }}">
+                                        <button type="submit" class="btn-primary">Confirm Reallocation</button>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn-secondary" data-bs-dismiss="modal">Close</button>
                                 </div>
                             </div>
-                            <tr>
-                                <td>Site B</td>
-                                <td>2 Cranes, 1 Excavator</td>
-                                <td>15 Workers</td>
-                                <td>300 Concrete Blocks, 150 Steel Beams</td>
-                                <td>
-                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#reallocateSiteBModal" aria-label="Reallocate resources for Site B">Reallocate</button>
-                                </td>
-                            </tr>
-                            <!-- Reallocate Site B Modal -->
-                            <div class="modal fade" id="reallocateSiteBModal" tabindex="-1" aria-labelledby="reallocateSiteBModalLabel" aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="reallocateSiteBModalLabel">Reallocate Resources for Site B</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <p><strong>Current Allocation:</strong></p>
-                                            <p>Equipment: 2 Cranes, 1 Excavator</p>
-                                            <p>Labor: 15 Workers</p>
-                                            <p>Materials: 300 Concrete Blocks, 150 Steel Beams</p>
-                                            <p><strong>Mock Action:</strong> Reallocate resources (e.g., move 1 Excavator to Site C, reduce 50 Concrete Blocks).</p>
-                                            <button type="button" class="btn btn-primary" onclick="alert('Resources reallocated successfully (mock action).')" aria-label="Confirm reallocation for Site B">Confirm Reallocation</button>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <tr>
-                                <td>Site C</td>
-                                <td>1 Crane, 2 Forklifts</td>
-                                <td>25 Workers</td>
-                                <td>400 Concrete Blocks, 100 Steel Beams</td>
-                                <td>
-                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#reallocateSiteCModal" aria-label="Reallocate resources for Site C">Reallocate</button>
-                                </td>
-                            </tr>
-                            <!-- Reallocate Site C Modal -->
-                            <div class="modal fade" id="reallocateSiteCModal" tabindex="-1" aria-labelledby="reallocateSiteCModalLabel" aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="reallocateSiteCModalLabel">Reallocate Resources for Site C</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <p><strong>Current Allocation:</strong></p>
-                                            <p>Equipment: 1 Crane, 2 Forklifts</p>
-                                            <p>Labor: 25 Workers</p>
-                                            <p>Materials: 400 Concrete Blocks, 100 Steel Beams</p>
-                                            <p><strong>Mock Action:</strong> Reallocate resources (e.g., add 1 Crane from Site A, reduce 5 Workers).</p>
-                                            <button type="button" class="btn btn-primary" onclick="alert('Resources reallocated successfully (mock action).')" aria-label="Confirm reallocation for Site C">Confirm Reallocation</button>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

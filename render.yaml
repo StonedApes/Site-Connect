@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: site-connect
+    env: python
+    plan: free
+    region: ohio
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --worker-class gevent --workers 3 app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12
+      - key: SECRET_KEY
+        sync: false
+      - key: SQLALCHEMY_DATABASE_URI
+        fromDatabase:
+          name: siteconnect-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: siteconnect-redis
+          property: connectionString
+    disks:
+      - name: uploads
+        mountPath: /uploads
+  - type: redis
+    name: siteconnect-redis
+    plan: free
+    region: ohio
+databases:
+  - name: siteconnect-db
+    plan: free
+    region: ohio

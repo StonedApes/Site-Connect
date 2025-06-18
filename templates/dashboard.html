@@ -1,153 +1,464 @@
 {% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Dashboard - Site Connect{% endblock %}
 {% block breadcrumb_title %}Dashboard{% endblock %}
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
-<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 <style>
-    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
-    .dashboard-card { transition: transform 0.3s ease; }
-    .dashboard-card:hover { transform: translateY(-4px); }
-    #site-map { border-radius: 8px; overflow: hidden; }
+    .construction-header {
+        background: #2F4F4F;
+        color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+    .construction-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80') no-repeat center;
+        opacity: 0.05;
+        z-index: 0;
+    }
+    .card {
+        background: #F5F5F5;
+        border: 1px solid #A0AEC0;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(139, 69, 19, 0.2);
+    }
+    .metric-badge {
+        background: #8B4513;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        transition: transform 0.3s ease, background-color 0.3s ease;
+    }
+    .metric-badge:hover {
+        transform: scale(1.1);
+        background-color: #DAA520;
+    }
+    .spinner {
+        border: 4px solid #F5F5F5;
+        border-top: 4px solid #DAA520;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+        margin-left: 8px;
+        display: none;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .progress-bar {
+        height: 8px;
+        background: #A0AEC0;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .progress {
+        height: 100%;
+        background: #8B4513;
+        transition: width 0.3s ease;
+    }
+    .fade-in {
+        animation: fadeIn 0.5s ease-in;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    .weather-widget {
+        border-left: 4px solid #DAA520;
+        padding-left: 8px;
+    }
 </style>
+<script>
+    console.log('Attempting to render dashboardData script');
+    try {
+        window.dashboardData = {
+            statusCounts: {{ status_counts|tojson|safe if status_counts is defined else '[0, 0, 0, 0]'|safe }},
+            incidentTypes: {{ incident_types|tojson|safe if incident_types is defined else '[0, 0, 0]'|safe }},
+            taskProgress: {{ task_progress|tojson|safe if task_progress is defined else '[0, 0]'|safe }},
+            financials: {{ financials|tojson|safe if financials is defined else '{"budget": 100000, "actual": 85000}'|safe }},
+            incidentTrends: {{ incident_trends|tojson|safe if incident_trends is defined else '[10, 15, 12, 8, 5]'|safe }},
+            siteLocations: {{ site_locations|tojson|safe if site_locations is defined else '[{"lat": 12.97, "lng": 77.59, "status": "active"}]'|safe }},
+            resourceForecast: {{ resource_forecast|tojson|safe if resource_forecast is defined else '{"labor": 90, "equipment": 70, "materials": 80}'|safe }}
+        };
+        console.log('Dashboard data initialized successfully:', window.dashboardData);
+    } catch (e) {
+        console.error('Error initializing dashboardData:', e);
+    }
+</script>
 {% endblock %}
 {% block content %}
-<div class="fade-in">
-    <div class="mb-8 text-center">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Welcome, {{ current_user.username }}!</h1>
-        <p class="text-lg text-gray-600 dark:text-gray-400 mt-2">Dashboard Overview as of {{ current_time|strftime('%I:%M %p IST, %d-%m-%Y') }}</p>
-        <button class="btn-primary mt-4 px-6 py-2" onclick="refreshDashboard()">Refresh Data</button>
+<div class="fade-in container mx-auto p-4">
+    <div class="construction-header relative z-10">
+        <h2 class="text-4xl font-bold">Welcome, {{ current_user.username }}!</h2>
+        <p class="text-lg">Dashboard Overview as of {{ current_time|strftime('%I:%M %p IST, %d-%m-%Y') }}</p>
+        <button id="refreshButton" class="mt-4 bg-8B4513 text-white px-6 py-3 rounded-md hover:bg-DAA520 transition-all duration-300">
+            Refresh Data
+        </button>
+        <span id="spinner" class="spinner"></span>
+        <div class="weather-widget mt-4 flex items-center">
+            <i class="fas fa-cloud-sun mr-2"></i>
+            <span>Weather: {{ weather_data|first|list|first.temp if weather_data else 25 }}°C, {{ weather_data|first|list|first.condition if weather_data else 'Sunny' }}</span>
+        </div>
     </div>
-    <div class="dashboard-grid">
-        <!-- Order Status -->
-        <div class="card dashboard-card">
+    <div class="dashboard-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+        <!-- Order Status Card -->
+        <div class="card card-hover p-4 h-72">
             <div class="card-body">
-                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Order Status</h4>
-                <div class="text-center text-lg">
-                    <span class="font-bold">Total Orders: {{ status_counts|sum }}</span>
-                </div>
-                <div class="h-64 mt-4">
-                    <canvas id="orderStatusChart"></canvas>
+                <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center"><i class="fas fa-box-open mr-2"></i> Order Status</h4>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span>Pending</span>
+                        <span class="metric-badge">{{ status_counts[0] if status_counts is defined else 0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Received</span>
+                        <span class="metric-badge">{{ status_counts[1] if status_counts is defined else 0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>In Production</span>
+                        <span class="metric-badge">{{ status_counts[2] if status_counts is defined else 0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Shipped</span>
+                        <span class="metric-badge">{{ status_counts[3] if status_counts is defined else 0 }}</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Incident Overview -->
-        <div class="card dashboard-card">
+        <!-- Incident Overview Card -->
+        <div class="card card-hover p-4 h-72">
             <div class="card-body">
-                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Incident Overview</h4>
-                <div class="text-center text-lg">
-                    <span class="font-bold">Open Incidents: {{ incident_types|sum }}</span>
-                </div>
-                <div class="h-64 mt-4">
-                    <canvas id="incidentTypesChart"></canvas>
+                <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center"><i class="fas fa-exclamation-triangle mr-2"></i> Incident Overview</h4>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span>High</span>
+                        <span class="metric-badge">{{ incident_types[0] if incident_types is defined else 0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Medium</span>
+                        <span class="metric-badge">{{ incident_types[1] if incident_types is defined else 0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Low</span>
+                        <span class="metric-badge">{{ incident_types[2] if incident_types is defined else 0 }}</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Task Progress -->
-        <div class="card dashboard-card">
+        <!-- Task Progress Card -->
+        <div class="card card-hover p-4 h-72">
             <div class="card-body">
-                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Task Progress</h4>
-                <div class="text-center text-lg">
-                    <span class="font-bold">Tasks Completed: {{ task_progress[0] }}</span>
-                </div>
-                <div class="h-64 mt-4">
-                    <canvas id="taskProgressChart"></canvas>
+                <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center"><i class="fas fa-tasks mr-2"></i> Task Progress</h4>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span>Completed</span>
+                        <span class="metric-badge">{{ task_progress[0] if task_progress is defined else 0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Pending</span>
+                        <span class="metric-badge">{{ task_progress[1] if task_progress is defined else 0 }}</span>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="filterCompleted" class="mr-2">
+                        <label for="filterCompleted">Show Completed</label>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Project Timeline -->
-        <div class="card dashboard-card">
+        <!-- Recent Orders Card -->
+        <div class="card card-hover p-4 h-72">
+            <div class="card-body text-center">
+                <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center justify-center"><i class="fas fa-truck mr-2"></i> Recent Orders</h4>
+                <div class="overflow-x-auto">
+                    <table class="table w-3/4 mx-auto text-sm">
+                        <thead>
+                            <tr class="bg-gray-200">
+                                <th class="p-2">ID</th>
+                                <th class="p-2">Item</th>
+                                <th class="p-2">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr class="border-b hover:bg-gray-100 {% if order.status != 'Completed' %}hidden{% endif %}" id="order-{{ order.order_id }}">
+                                <td class="p-2">{{ order.order_id }}</td>
+                                <td class="p-2">{{ order.item }}</td>
+                                <td class="p-2">
+                                    <span class="metric-badge px-2 py-1 rounded-full text-white text-xs {% if order.status == 'Shipped' %}bg-green-600{% elif order.status == 'Pending' %}bg-blue-600{% else %}bg-yellow-600{% endif %}" title="Click to view details" onclick="alert('Order ID: {{ order.order_id }}')">
+                                        {{ order.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Timelines Card -->
+        <div class="card card-hover p-4 h-72">
             <div class="card-body">
-                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Project Timeline</h4>
-                <ul class="space-y-3">
+                <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center"><i class="fas fa-calendar-alt mr-2"></i> Project Timelines</h4>
+                <div class="space-y-2">
                     {% for project in projects %}
-                    <li class="flex justify-between items-center">
-                        <span class="badge {{ 'bg-green-500' if project.status == 'In Progress' else 'bg-yellow-500' if project.status == 'Not Started' else 'bg-blue-500' }} px-3 py-1 text-sm">
-                            {{ project.name }}
-                        </span>
-                        <span class="text-sm text-gray-600 dark:text-gray-400">{{ project.end_date }}</span>
-                    </li>
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium">{{ project.name }}</span>
+                        <span class="text-sm text-gray-600">{{ project.end_date|strftime('%Y-%m-%d') }}</span>
+                    </div>
                     {% endfor %}
-                </ul>
+                    {% if not projects %}
+                    <p class="text-gray-500">No active projects.</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
-        <!-- Weather Update -->
-        <div class="card dashboard-card">
+        <!-- Resource Utilization Card -->
+        <div class="card card-hover p-4 h-72">
             <div class="card-body">
-                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Weather Update</h4>
-                <ul class="space-y-2">
-                    {% for site, data in weather_data.items() %}
-                    <li class="text-sm">
-                        {{ site }}: {{ data.temp }}°C, {{ data.condition }}
-                    </li>
-                    {% endfor %}
-                </ul>
-                <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm">Updated: {{ current_time|strftime('%I:%M %p IST') }}</p>
+                <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center"><i class="fas fa-tools mr-2"></i> Resource Utilization</h4>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span>Labor</span>
+                        <span class="metric-badge">{{ resource_util.labor if resource_util is defined else 80 }}%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Equipment</span>
+                        <span class="metric-badge">{{ resource_util.equipment if resource_util is defined else 60 }}%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Materials</span>
+                        <span class="metric-badge">{{ resource_util.materials if resource_util is defined else 75 }}%</span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Recent Orders -->
-        <div class="card dashboard-card">
+        <!-- Safety Compliance Card -->
+        <div class="card card-hover p-4 h-72">
             <div class="card-body">
-                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Orders</h4>
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Item</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for order in recent_orders %}
-                        <tr>
-                            <td>{{ order.order_id }}</td>
-                            <td>{{ order.item }}</td>
-                            <td>
-                                <span class="badge {{ 'bg-green-500' if order.status == 'Shipped' else 'bg-yellow-500' if order.status == 'In Production' else 'bg-gray-500' }} px-2 py-1 text-sm">
-                                    {{ order.status }}
-                                </span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center"><i class="fas fa-shield-alt mr-2"></i> Safety Compliance</h4>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span>Compliance Rate</span>
+                        <span class="metric-badge">{{ safety_compliance.rate if safety_compliance is defined else 90 }}%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Overdue Checks</span>
+                        <span class="metric-badge">{{ safety_compliance.overdue if safety_compliance is defined else 2 }}</span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Site Map -->
-        <div class="card dashboard-card col-span-full">
+        <!-- Equipment Availability Card -->
+        <div class="card card-hover p-4 h-72">
             <div class="card-body">
-                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Site Map</h4>
-                <div id="site-map" class="h-96 w-full"></div>
+                <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center"><i class="fas fa-tractor mr-2"></i> Equipment Availability</h4>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span>Available</span>
+                        <span class="metric-badge">{{ equipment_status.available if equipment_status is defined else 5 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>In Use</span>
+                        <span class="metric-badge">{{ equipment_status.in_use if equipment_status is defined else 3 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Maintenance</span>
+                        <span class="metric-badge">{{ equipment_status.maintenance if equipment_status is defined else 1 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Progress Card -->
+        <div class="card card-hover p-4 h-72">
+            <div class="card-body">
+                <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center"><i class="fas fa-chart-line mr-2"></i> Project Progress</h4>
+                {% if projects and projects|length > 0 %}
+                    {% set avg_progress = (projects|map(attribute='progress')|sum / projects|length)|round(0, 'common') if projects|map(attribute='progress')|sum is not none else 0 %}
+                    <div class="progress-bar">
+                        <div class="progress" style="width: {{ avg_progress }}%;"></div>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">Average Completion: {{ avg_progress }}%</p>
+                {% else %}
+                    <p class="text-gray-500">No project progress data.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Financial Overview Card -->
+        <div class="card card-hover p-4 h-72">
+            <div class="card-body">
+                <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center"><i class="fas fa-dollar-sign mr-2"></i> Financial Overview</h4>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span>Budget</span>
+                        <span class="text-gray-800">${{ financials.budget if financials is defined else 100000 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Actual</span>
+                        <span class="text-gray-800">${{ financials.actual if financials is defined else 85000 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center {% if (financials.actual if financials is defined else 85000) > (financials.budget if financials is defined else 100000) %}text-red-600{% else %}text-green-600{% endif %}">
+                        <span>Variance</span>
+                        <span>${{ (financials.actual if financials is defined else 85000) - (financials.budget if financials is defined else 100000) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Site Map Card -->
+        <div class="card card-hover p-4 h-72">
+            <div class="card-body">
+                <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center"><i class="fas fa-map-marker-alt mr-2"></i> Site Map</h4>
+                <div class="map-container">
+                    <p class="text-center text-gray-500">Site: {{ site_locations[0].status|capitalize }} ({{ site_locations[0].lat }}, {{ site_locations[0].lng }})</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incident Trends Card -->
+        <div class="card card-hover p-4 h-72">
+            <div class="card-body">
+                <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center"><i class="fas fa-chart-area mr-2"></i> Incident Trends</h4>
+                <div class="w-full h-40">
+                    <canvas id="incidentTrendsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resource Forecast Card -->
+        <div class="card card-hover p-4 h-72">
+            <div class="card-body">
+                <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center"><i class="fas fa-chart-pie mr-2"></i> Resource Forecast</h4>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span>Labor</span>
+                        <span class="metric-badge">{{ resource_forecast.labor if resource_forecast is defined else 90 }}%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Equipment</span>
+                        <span class="metric-badge">{{ resource_forecast.equipment if resource_forecast is defined else 70 }}%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Materials</span>
+                        <span class="metric-badge">{{ resource_forecast.materials if resource_forecast is defined else 80 }}%</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-{% block extra_scripts %}
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const mapContainer = document.getElementById('site-map');
-        if (mapContainer) {
-            const map = L.map(mapContainer).setView([51.505, -0.09], 13); // Default view
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            }).addTo(map);
-            {% for order in recent_orders %}
-                {% if order.vehicle and order.vehicle.latitude and order.vehicle.longitude %}
-                    L.marker([{{ order.vehicle.latitude }}, {{ order.vehicle.longitude }}]).addTo(map)
-                        .bindPopup(`Order {{ order.order_id }}: {{ order.item }}<br>Status: {{ order.status }}`)
-                        .openPopup();
-                {% endif %}
-            {% endfor %}
+    // Refresh button functionality with spinner
+    document.getElementById('refreshButton')?.addEventListener('click', function () {
+        const spinner = document.getElementById('spinner');
+        const button = this;
+        if (spinner && button) {
+            spinner.style.display = 'inline-block';
+            button.disabled = true;
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            console.error('Spinner or button not found');
         }
     });
+
+    // Stop spinner on page load
+    window.addEventListener('load', function () {
+        const spinner = document.getElementById('spinner');
+        const button = document.getElementById('refreshButton');
+        if (spinner && button) {
+            spinner.style.display = 'none';
+            button.disabled = false;
+        } else {
+            console.error('Spinner or button not found on load');
+        }
+    });
+
+    // Chart.js for Incident Trends
+    const incidentTrendsCtx = document.getElementById('incidentTrendsChart')?.getContext('2d');
+    if (incidentTrendsCtx) {
+        new Chart(incidentTrendsCtx, {
+            type: 'line',
+            data: {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'],
+                datasets: [{
+                    label: 'Incidents',
+                    data: {{ incident_trends|tojson|safe if incident_trends is defined else '[0, 0, 0, 0, 0]'|safe }},
+                    borderColor: '#8B4513',
+                    backgroundColor: 'rgba(139, 69, 19, 0.2)',
+                    borderWidth: 2,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: { enabled: true }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    } else {
+        console.error('Incident Trends chart failed: incidentTrendsCtx is undefined');
+    }
+
+    // Task filter functionality
+    document.getElementById('filterCompleted')?.addEventListener('change', function () {
+        const rows = document.querySelectorAll('table tbody tr');
+        if (rows) {
+            rows.forEach(row => {
+                if (!this.checked && row.querySelector('td:last-child span')?.textContent !== 'Completed') {
+                    row.classList.add('hidden');
+                } else {
+                    row.classList.remove('hidden');
+                }
+            });
+        } else {
+            console.error('Table rows not found');
+        }
+    });
+
+    // Fallback to ensure dashboardData is defined
+    if (!window.dashboardData) {
+        console.warn('dashboardData not found, applying fallback');
+        window.dashboardData = {
+            statusCounts: {{ status_counts|tojson|safe if status_counts is defined else '[0, 0, 0, 0]'|safe }},
+            incidentTypes: {{ incident_types|tojson|safe if incident_types is defined else '[0, 0, 0]'|safe }},
+            taskProgress: {{ task_progress|tojson|safe if task_progress is defined else '[0, 0]'|safe }},
+            financials: {{ financials|tojson|safe if financials is defined else '{"budget": 100000, "actual": 85000}'|safe }},
+            incidentTrends: {{ incident_trends|tojson|safe if incident_trends is defined else '[10, 15, 12, 8, 5]'|safe }},
+            siteLocations: {{ site_locations|tojson|safe if site_locations is defined else '[{"lat": 12.97, "lng": 77.59, "status": "active"}]'|safe }},
+            resourceForecast: {{ resource_forecast|tojson|safe if resource_forecast is defined else '{"labor": 90, "equipment": 70, "materials": 80}'|safe }}
+        };
+        console.log('Fallback dashboard data applied:', window.dashboardData);
+    }
 </script>
 {% endblock %}
