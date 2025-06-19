@@ -1447,6 +1447,21 @@ def weather_forecast():
     weather_data = {}
     weather_records = Weather.query.filter_by(company_id=current_user.company_id).order_by(Weather.site_id, Weather.date).all()
     for record in weather_records:
+        if record.site_id not in weather_data:
+            weather_data[record.site_id] = []
+        weather_data[record.site_id].append({
+            'date': record.date,
+            'temp': record.temperature,
+            'condition': record.condition,
+            'precipitation': record.precipitation,
+            'wind_speed': record.wind_speed,
+            'warning': record.warning
+        })
+    return render_template('weather_forecast.html', weather_data=weather_data)
+
+    weather_data = {}
+    weather_records = Weather.query.filter_by(company_id=current_user.company_id).order_by(Weather.site_id, Weather.date).all()
+    for record in weather_records:
         if record.site.name not in weather_data:
             weather_data[record.site.name] = []
         weather_data[record.site.name].append({
