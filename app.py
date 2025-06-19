@@ -62,7 +62,7 @@ from reportlab.pdfgen import canvas
 from flask_restful import Api, Resource
 from flask_migrate import Migrate
 from pulp import LpProblem, LpMinimize, LpVariable, lpSum, LpStatus
-
+from flask import Flask
 
 # Load environment variables
 load_dotenv()
@@ -75,14 +75,15 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
-# Validate required environment variables
-required_env_vars = ['SECRET_KEY', 'SQLALCHEMY_DATABASE_URI']
+# Validate required environment variables with fallback for SQLite
+required_env_vars = ['SECRET_KEY']
 for var in required_env_vars:
     if not os.environ.get(var):
         raise ValueError(f"Environment variable {var} must be set")
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
+# Use SQLite as default, override with SQLALCHEMY_DATABASE_URI if provided
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI', 'sqlite:///site_connect.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 app.config['CACHE_TYPE'] = 'redis' if os.environ.get('REDIS_URL') else 'simple'
@@ -115,7 +116,7 @@ def strftime_filter(value, format='%Y-%m-%d %H:%M'):
             return value
     return value.strftime(format) if value else ''
 
-# Database Models
+# Database Models (unchanged)
 class Company(db.Model):
     __tablename__ = 'companies'
     company_id = db.Column(db.Integer, primary_key=True)
@@ -431,7 +432,7 @@ class AuditLog(db.Model):
     details = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Forms
+# Forms (unchanged)
 class PasswordValidator:
     def __call__(self, form, field):
         password = field.data
@@ -681,6 +682,7 @@ def optimize_resources(company_id):
         inv_list = [(i.item_name, int(inventory_vars[(i.inventory_id, s.site_id)].varValue)) for i in inventory if inventory_vars[(i.inventory_id, s.site_id)].varValue > 0]
         allocations.append({
             'site': s.name,
+            'site_id': s.site_id,
             'equipment': ', '.join(equip_list) or 'None',
             'labor': ', '.join(emp_list) or 'None',
             'materials': ', '.join([f"{name} ({qty})" for name, qty in inv_list]) or 'None'
@@ -721,7 +723,7 @@ def init_db():
                 company_id=default_company.company_id,
                 username='admin',
                 password=hashed_password,
-                email='admin@example.com',  # Add this line
+                email='admin@example.com',
                 role_id=default_role.role_id
             )
             db.session.add(admin_user)
@@ -831,7 +833,7 @@ def init_db():
                 company_id=default_company.company_id,
                 username='admin',
                 password=hashed_password,
-                email='admin@example.com',  # Ensure email is included
+                email='admin@example.com',
                 role_id=default_role.role_id
             )
             db.session.add(admin_user)
@@ -847,7 +849,7 @@ def init_db():
             conn.commit()
         print("Database initialized successfully.")
 
-# Routes
+# Routes (unchanged)
 @app.route('/')
 def index():
     return redirect(url_for('login'))
@@ -992,7 +994,7 @@ def dashboard():
         logger.error(f"Dashboard error: {str(e)}", exc_info=True)
         flash('Error loading dashboard. Please try again.', 'danger')
         return render_template('error.html'), 500
-    
+
 @app.route('/profile')
 @login_required
 def profile():
@@ -2172,7 +2174,6 @@ def settings():
         return redirect(url_for('settings'))
     return render_template('settings.html', form=form)
 
-
 @app.route('/resource_allocation')
 @login_required
 def resource_allocation():
@@ -2598,3 +2599,5 @@ if __name__ == '__main__':
     logger.info("Starting Flask application...")
     init_db()  # Initialize database on first run
     socketio.run(app, debug=True)
+
+    
